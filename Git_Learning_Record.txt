@@ -13,6 +13,7 @@ git config:
 git updates from a remote repository:
 	git fetch: git fetch alias, git merge alias/branch
 	git merge: git merge alias/branch
+	git checkout: git checkout branch, git reset --hard; 拉取分支,重置head的位置, 用于删除当前文件后想重新拉取git上的代码
 
 git command:
 	add repository: git remote add [alias] [url]
