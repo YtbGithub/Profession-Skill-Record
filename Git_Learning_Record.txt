@@ -1,0 +1,27 @@
+create ssh:
+	ssh-keygen -t rsa -C "email@*.com"
+		first: appoint folder of ssh => default folder(entering this command will promt)
+		then: key in enter
+	enter pub key: Account => Settings => SSH and GPG keys => copy pub of secret key => enter
+	Testing: ssh -T git@github.com
+
+git config:
+	git config --global user.email "..."
+	git config --global user.name "..."
+	git remote add [appoint repository alias] [appoint repository url/git]
+	
+git updates from a remote repository:
+	git fetch: git fetch alias, git merge alias/branch
+	git merge: git merge alias/branch
+
+git command:
+	add repository: git remote add [alias] [url]
+	del repository: git remote rm [alias]
+	push to repository: git push [alias] [branch]
+
+git operation:
+	git init
+	git add file_name
+	git commit -m "describe"
+	git push -u alias master
+	
