@@ -25,4 +25,7 @@ git operation:
 	git add file_name
 	git commit -m "describe"
 	git push -u alias master
-	
+
+error
+	failed to push some refs to 'github.com:YtbGithub/Profession-Skill-Recor.git'
+		solution: git pull origin master, 有些没拉取下来就会出现这个问题，所以重新拉取一下就可以解决
