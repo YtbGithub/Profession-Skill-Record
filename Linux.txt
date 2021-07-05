@@ -1,0 +1,5 @@
+重启：
+	reboot
+	shutdown -r now
+查看进程：
+	ps -ef
