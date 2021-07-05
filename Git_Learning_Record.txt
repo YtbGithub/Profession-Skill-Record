@@ -25,5 +25,4 @@ git operation:
 	git add file_name
 	git commit -m "describe"
 	git push -u alias master
-Testing Testing
 	
