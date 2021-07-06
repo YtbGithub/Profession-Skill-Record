@@ -3,3 +3,5 @@
 	shutdown -r now
 查看进程：
 	ps -ef
+复制文件
+	cp -r current_path new_path, -r 
