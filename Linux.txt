@@ -4,4 +4,18 @@
 查看进程：
 	ps -ef
 复制文件
-	cp -r current_path new_path, -r 
+	cp -r current_path new_path, -r (pick all of subordinate folder and file)
+ipconfig:/etc/sysconfig/network-scripts/ifcfg-name(random name)
+
+mkdir: make directory
+touch: make file
+
+chown: change owner 更改属主[:以及属组]
+    chown [-cfhvR] [--help] [--version] user[:group] file
+chgrp: change group 更改属组
+    chgrp [-cfhvR] [--help] [--version] [所属群组] [文件或目录]
+chmod: change mode 更改权限
+    chmod [-cfvR] [--help] [--version] mode file
+
+chattr: 适用于日志文件，如chattr +i *.conf,该文件的属性会是----i--------,只能追加而不能删除
+	
