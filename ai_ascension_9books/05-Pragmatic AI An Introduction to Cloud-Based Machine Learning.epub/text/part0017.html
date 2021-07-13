@@ -1,0 +1,1152 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>6 Predicting Social-Media Influence in the NBA</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="ch06"><span epub:type="pagebreak" id="page_97" class="calibre2"></span>6</h2>
+<h2 class="h2a">Predicting Social-Media Influence in the NBA</h2>
+<p class="blockquote"><em class="calibre5">Talent wins games, but teamwork and intelligence wins championships.</em></p>
+<p class="attribution">Michael Jordan</p>
+<p class="noindent">Sports is a fascinating topic for data scientists because there is always a story behind every number. Just because an NBA player scores more points than another player, it doesn’t necessarily mean he adds more value to the team. As a result, there has been a recent explosion in individual statistics that try to measure a player’s impact. ESPN created the Real Plus-Minus, FiveThirtyEight came up with the CARMELO NBA Player Projections, and the NBA has the Player Impact Estimate. Social media is no different; there is more to the story than just a high follower count.</p>
+<p class="noindent">This chapter will explore the numbers behind the numbers using ML and then creating an API to serve out the ML model. All of this will be done in the spirit of solving real-world problems in a real-world way. This means covering details like setting up your environment, deployment, and monitoring, in addition to creating models on clean data.</p>
+<h3 id="ch06lev1" class="calibre12">Phrasing the Problem</h3>
+<p class="noindent">Coming from a cold start in looking at social media and the NBA, there many interesting questions to ask. Here are some examples.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">Does individual player performance impact a team’s wins?</p></li>
+<li class="calibre14"><p class="bullet">Does on-the-court performance correlate with social-media influence?</p></li>
+<li class="calibre14"><p class="bullet">Does engagement on social media correlate with popularity on Wikipedia?</p></li>
+<li class="calibre14"><p class="bullet">Is follower count or social-media engagement a better predictor of popularity on Twitter?</p></li>
+<li class="calibre14"><p class="bullet">Does salary correlate with on-the-field performance?</p></li>
+<li class="calibre14"><p class="bullet">Does winning bring more fans to games?</p></li>
+<li class="calibre14"><p class="bullet">What drives the valuation of teams more: attendance or the local real estate market?</p></li>
+</ul>
+<p class="noindent"><span epub:type="pagebreak" id="page_98"></span>To get the answers to these questions and others, data will need to be collected. As previously discussed, the 80/20 rule applies here. Eighty percent of this problem is collecting the data and then transforming the data. The other 20 percent is ML- and data science–related tasks like finding the right model, doing EDA, and feature engineering.</p>
+<h4 id="ch06lev1sub1" class="calibre16">Gathering the Data</h4>
+<p class="noindent">In <a href="part0017.html#ch6fig1" class="calibre7">Figure 6.1</a>, there is a list of data sources to extract and transform.</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig1" class="calibre7"></a><img src="../images/00026.jpeg" aria-describedby="alt_06fig01" alt="A figure depicts N B A Social Power Data Sources." class="calibre8"/>
+<aside class="hidden" id="alt_06fig01" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The Social Power Influences and Performance NBA is shown at the center. Five rectangular boxes labeled “Wikipedia Global Population,” “N B A On The Court performance,” “Wikipedia Global Engagement and Influence,” “Arena Attendance Local Engagement and Willingness To Pay,” and “Salary Pay For Performance.” A double-headed arrow is shown pointing between each box and the Social Power Influences and Performance NBA.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.1</span> NBA Social Power Data Sources</p>
+</div>
+<p class="noindent">Gathering this data represents a nontrivial software engineering problem. There are many obstacles to overcome, such as finding a good data source, writing code to extract it, abiding by the limitations of the API, and finally getting the data into the correct shape. The first step to collecting all of the data is to figure out which data source to collect first, and where to get it.</p>
+<p class="noindent">Knowing that the ultimate goal is to compare the social-media influence and power of NBA players, a great place to start is with the roster of the NBA players in the 2016–2017 season. In theory, this would be an easy task, but there are a few traps to collecting NBA data. The intuitive place to start would be to go to the official web site at nba.com. For some reason, however, many sports leagues make it difficult to download raw data from their sites. The NBA is no exception, and grabbing stats from their official web site is doable but challenging.</p>
+<p class="noindent">This brings up an interesting point about how to collect data. Often it is easy to collect data manually, that is, downloading from a web site and cleaning it up manually in Excel, Jupyter Notebook, or RStudio. This can be a very reasonable way to get started with a data science problem. If collecting one data source and cleaning it starts to take a few hours, however, it is probably best to look at writing code to solve the problem. There is no hard and fast rule, but experienced people figure out how to continuously make progress on a problem without getting blocked.</p>
+<h5 class="calibre17"><span epub:type="pagebreak" id="page_99"></span>Collecting the First Data Sources</h5>
+<p class="noindent">Instead of starting with a thorny data source such as the official NBA web site, which actively prevents you from downloading its data, we are going to start with something relatively easy.  To collect a first data source from basketball, you can download it directly from this book’s GitHub project (<a href="https://github.com/noahgift/pragmaticai" class="calibre7">https://github.com/noahgift/pragmaticai</a>) or from Basketball Reference  (<a href="https://www.basketball-reference.com/leagues/NBA_2017_per_game.html" class="calibre7">https://www.basketball-reference.com/leagues/NBA_2017_per_game.html</a>).</p>
+<p class="noindent">Doing ML in the real world is beyond just finding the right model for clean data; it means understanding how to set up your local environment as well.</p>
+<p class="noindentb">To start running the code, a few steps are needed.</p>
+<p class="number">1. Create a virtual environment (based on Python 3.6).</p>
+<p class="number">2. Install a few packages that we will use for this chapter: i.e., Pandas, Jupyter.</p>
+<p class="numberb">3. Run this all through a Makefile.</p>
+<p class="noindent"><a href="part0017.html#ch6list1" class="calibre7">Listing 6.1</a> shows a setup command that creates a virtual environment for Python 3.6 and installs the packages listed in the requirements.txt file in <a href="part0017.html#ch6list2" class="calibre7">Listing 6.2</a>. This can be executed all at once  with this one liner.</p>
+<p class="pre">make setup &amp;&amp; install</p>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch6list1" class="calibre20"></a><span class="calibre3">Listing 6.1</span> <strong class="calibre3">Makefile Contents</strong></p>
+<p class="codelink"><a id="p099pro01" href="part0035_split_000.html#p099pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="hr"></p>
+<p class="pre">setup:<br class="calibre9"/>
+         python3 -m venv ~/.pragai6<br class="calibre9"/>
+install:<br class="calibre9"/>
+         pip install -r requirements.txt</p>
+</div>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch6list2" class="calibre20"></a><span class="calibre3">Listing 6.2</span> <strong class="calibre3">requirements.txt</strong></p>
+<p class="hr1"></p>
+<p class="pre">Contents<br class="calibre9"/>
+pytest<br class="calibre9"/>
+nbval<br class="calibre9"/>
+ipython<br class="calibre9"/>
+requests<br class="calibre9"/>
+python-twitter<br class="calibre9"/>
+pandas<br class="calibre9"/>
+pylint<br class="calibre9"/>
+sensible<br class="calibre9"/>
+jupyter<br class="calibre9"/>
+matplotlib<br class="calibre9"/>
+seaborn<br class="calibre9"/>
+statsmodels<br class="calibre9"/>
+sklearn<br class="calibre9"/>
+wikipedia<br class="calibre9"/>
+spacy<br class="calibre9"/>
+ggplot</p>
+</div>
+<div class="note"><hr class="calibre15"/>
+<p class="title"><span epub:type="pagebreak" id="page_100"></span>Note</p>
+<p class="note-para">Another handy trick in dealing with Python virtual environments is to create an alias in your .bashrc or .zshrc file that automatically activates the environment and changes into the directory all in one operation. The way I typically do this is by adding this snippet.</p>
+<p class="codelink"><a id="p100pro01" href="part0035_split_001.html#p100pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="note-para1"><code class="calibre11">alias pragai6top="cd ~/src/pragai/chapter6\</code></p>
+<p class="note-para1"><code class="calibre11">&amp;&amp; source ~/. Pragai6 /bin/activate"</code></p>
+<p class="note-para">To work on this chapter’s project, type <code class="calibre11">pragai6top</code> into the shell, and you will cd into the correct project checkout and start your virtual environment. This is the power of using shell aliases in action. There are other tools that automatically do this for you, like pipenv; it may be worth exploring them as well.</p>
+<hr class="calibre15"/></div>
+<p class="noindent">To inspect the data, start a Jupyter Notebook using the command: <code class="calibre11">jupyter notebook</code>. Running this will launch a web browser that will allow you to explore existing notebooks or create new ones. If you have checked out the source code for this book’s GitHub project, you will see a file named basketball_reference.ipynb.</p>
+<p class="noindent">This is a simple, hello world–type notebook with the data loaded into it. Loading a data set into Jupyter Notebook, or in the case of R, RStudio, is often the most convenient way to do initial validation and exploration of a data set. <a href="part0017.html#ch6list3" class="calibre7">Listing 6.3</a> shows how you can also explore the data from a regular IPython shell in addition to or instead of Jupyter.</p>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch6list3" class="calibre20"></a><span class="calibre3">Listing 6.3</span> Jupyter Notebook Basketball Reference Exploration</p>
+<p class="codelink"><a id="p100pro02" href="part0035_split_002.html#p100pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="hr"></p>
+<p class="pre-ex">import pandas as pd<br class="calibre9"/>
+nba = pd.read_csv("data/nba_2017_br.csv")<br class="calibre9"/>
+nba.describe()</p>
+</div>
+<div class="note"><hr class="calibre15"/>
+<p class="title">Note</p>
+<p class="note-para">Another useful technique is to get in the habit of ensuring Jupyter Notebooks are runnable using the nbval plugin for pytest. You can add a Makefile command test that will run all of your notebooks by issuing</p>
+<p class="note-para1"><code class="calibre11">make test</code></p>
+<p class="note-para">You can see what that would look like in a Makefile in the snippet below.</p>
+<p class="codelink"><a id="p100pro03" href="part0035_split_003.html#p100pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="note-para1"><code class="calibre11">test:</code></p>
+<p class="note-para1"><code class="calibre11">      py.test --nbval notebooks/*.ipynb</code></p>
+<hr class="calibre15"/></div>
+<p class="noindent">Loading a CSV file into Pandas is easy if the CSV file has names for the columns and if the rows of each column are of equal length. If you are dealing with prepared data sets, then it is often if not always the case that the data will be in a suitable shape to load. In the real world, things are never this easy, and it is a battle to get the data into the correct shape as we will see later in this chapter.</p>
+<p class="noindent"><a href="part0017.html#ch6fig2" class="calibre7">Figure 6.2</a> shows the output in Jupyter Notebook of the describe command. The describe function on a Pandas DataFrame provides descriptive statistics, including the number of columns, in this <span epub:type="pagebreak" id="page_101"></span>case 27, and median (this is the 50 percent row), for each column. At this point, it might be a good idea to play around with the Jupyter Notebook that was created and see what other insights you can observe. One of the things this data set doesn’t have, however, is a single metric to rank both offensive and defensive performance in a single statistic. To get this, we will need to combine this data set with other sources from ESPN and the NBA. This will raise the difficulty of the project significantly from simply using data to finding it, and then transforming it. One approach that is reasonable is to use a scraping tool like Scrapy, but in our situation, we can use a more ad hoc method. By going to the ESPN and NBA web sites, it is possible to cut and paste the data and put it into Excel. Then the data can be manually cleaned up and saved as a CSV file. For a small data set, this is often much quicker than trying to write a script to perform the same tasks.</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig2" class="calibre7"></a><img src="../images/00027.jpeg" aria-describedby="alt_06fig02" alt="A screenshot displays the output in Jupyter Notebook of the describe command." class="calibre8"/>
+<aside class="hidden" id="alt_06fig02" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen reads, jupyter basketball_reference at the top. Three fields: In [1] filed reads: import pandas as pd, In [3] filed reads: nba = pd.read_csv(“../data/nba_2017_br.csv”), and In [3] field reads: nba.describe (). Another filed, Out[3] shows a table with 8 rows and 27 column. The column header in the screenshot shows 8 columns that read: RK, Age, G, GS, MP, FG, FGA, and left blank. The row header reads: count, mean, std, min, 25 percent, 50 percent, 75 percent, and max. A filed, In [ ] is shown empty.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.2</span> Basketball Reference DataFrame Describe Output Jupyter</p>
+</div>
+<p class="noindent">Later, if this data needs to turn into a bigger project, this approach becomes a poor idea—but for prototyping, it is one of the strongest options. A key takeaway for messy data science problems is to continue to make forward progress without getting bogged down in too much detail. It is very easy to spend a lot of time automating a messy data source only to realize later that the signals are not helpful.</p>
+<p class="noindentb"><span epub:type="pagebreak" id="page_102"></span>Grabbing the data from ESPN is a similar process as FiveThirtyEight, so I won’t describe how to collect it again. A couple of other data sources to collect are salary and endorsements. ESPN has the salary information, and Forbes has a small subset of the endorsement data for eight players. <a href="part0017.html#ch06table1" class="calibre7">Table 6.1</a> describes the shape of the data sources, summarizes their content, and defines their source. Mostly accomplished through manual work, there is a fairly impressive list of data sources.</p>
+<p class="table" id="ch06table1"><span class="calibre6">Table 6.1</span> <strong class="calibre6">NBA Data Sources</strong></p>
+<table class="calibre22">
+<tr class="calibre23">
+<td class="calibre24"><p class="table"><strong class="calibre6">Data Source</strong></p></td>
+<td class="calibre24"><p class="table"><strong class="calibre6">Filename</strong></p></td>
+<td class="calibre24"><p class="table"><strong class="calibre6">Rows</strong></p></td>
+<td class="calibre24"><p class="table"><strong class="calibre6">Summary</strong></p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Basketball Reference</p></td>
+<td class="calibre24"><p class="table">nba_2017_attendance.csv</p></td>
+<td class="calibre24"><p class="table">30</p></td>
+<td class="calibre24"><p class="table">Stadium attendance</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Forbes</p></td>
+<td class="calibre24"><p class="table">nba_2017_endorsements.csv</p></td>
+<td class="calibre24"><p class="table">8</p></td>
+<td class="calibre24"><p class="table">Top players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Forbes</p></td>
+<td class="calibre24"><p class="table">nba_2017_team_valuations.csv</p></td>
+<td class="calibre24"><p class="table">30</p></td>
+<td class="calibre24"><p class="table">All teams</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">ESPN</p></td>
+<td class="calibre24"><p class="table">nba_2017_salary.csv</p></td>
+<td class="calibre24"><p class="table">450</p></td>
+<td class="calibre24"><p class="table">Most players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">NBA</p></td>
+<td class="calibre24"><p class="table">nba_2017_pie.csv</p></td>
+<td class="calibre24"><p class="table">468</p></td>
+<td class="calibre24"><p class="table">All players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">ESPN</p></td>
+<td class="calibre24"><p class="table">nba_2017_real_plus_minus.csv</p></td>
+<td class="calibre24"><p class="table">468</p></td>
+<td class="calibre24"><p class="table">All players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Basketball Reference</p></td>
+<td class="calibre24"><p class="table">nba_2017_br.csv</p></td>
+<td class="calibre24"><p class="table">468</p></td>
+<td class="calibre24"><p class="table">All players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">FiveThirtyEight</p></td>
+<td class="calibre24"><p class="table">nba_2017_elo.csv</p></td>
+<td class="calibre24"><p class="table">30</p></td>
+<td class="calibre24"><p class="table">Team rank</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Basketball Reference</p></td>
+<td class="calibre24"><p class="table">nba_2017_attendance.csv</p></td>
+<td class="calibre24"><p class="table">30</p></td>
+<td class="calibre24"><p class="table">Stadium attendance</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Forbes</p></td>
+<td class="calibre24"><p class="table">nba_2017_endorsements.csv</p></td>
+<td class="calibre24"><p class="table">8</p></td>
+<td class="calibre24"><p class="table">Top players</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">Forbes</p></td>
+<td class="calibre24"><p class="table">nba_2017_team_valuations.csv</p></td>
+<td class="calibre24"><p class="table">30</p></td>
+<td class="calibre24"><p class="table">All teams</p></td>
+</tr>
+<tr class="calibre23">
+<td class="calibre24"><p class="table">ESPN</p></td>
+<td class="calibre24"><p class="table">nba_2017_salary.csv</p></td>
+<td class="calibre24"><p class="table">450</p></td>
+<td class="calibre24"><p class="table">Most players</p></td>
+</tr>
+</table>
+<p class="noindent">There is still a lot of work left to get the rest of the data, mainly from Twitter and Wikipedia, and transform it into a unified data set. A couple of initially interesting possibilities are exploring the top eight player’s endorsements and exploring the valuation of the teams themselves.</p>
+<h5 class="calibre17">Exploring First Data Sources: Teams</h5>
+<p class="noindent">The first thing to do is to use a new Jupyter Notebook. In the GitHub repository, this has already been done for you, and it is called exploring_team_valuation_nba. Next, import a common set of libraries that are typically used in exploring data in a Jupyter Notebook. This is shown in <a href="part0017.html#ch6list4" class="calibre7">Listing 6.4</a>.</p>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch6list4" class="calibre20"></a><span class="calibre3">Listing 6.4</span> Jupyter Notebook Common Initial Imports</p>
+<p class="codelink"><a id="p102pro01" href="part0035_split_004.html#p102pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="hr"></p>
+<p class="pre-ex">import pandas as pd<br class="calibre9"/>
+import statsmodels.api as sm<br class="calibre9"/>
+import statsmodels.formula.api as smf<br class="calibre9"/>
+import matplotlib.pyplot as plt<br class="calibre9"/>
+import seaborn as sns<br class="calibre9"/>
+color = sns.color_palette()<br class="calibre9"/>
+%matplotlib inline</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_103"></span>Next, create a Pandas DataFrame for each source, as shown in <a href="part0017.html#ch6list5" class="calibre7">Listing 6.5</a>.</p>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch6list5" class="calibre20"></a><span class="calibre3">Listing 6.5</span> Create DataFrame for Sources</p>
+<p class="codelink"><a id="p103pro01" href="part0035_split_005.html#p103pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="hr"></p>
+<p class="pre-ex">attendance_df = pd.read_csv("../data/nba_2017_attendance.csv")<br class="calibre9"/>
+endorsement_df = pd.read_csv("../data/nba_2017_endorsements.csv")<br class="calibre9"/>
+valuations_df = pd.read_csv("../data/nba_2017_team_valuations.csv")<br class="calibre9"/>
+salary_df = pd.read_csv("../data/nba_2017_salary.csv")<br class="calibre9"/>
+pie_df = pd.read_csv("../data/nba_2017_pie.csv")<br class="calibre9"/>
+plus_minus_df = pd.read_csv("../data/nba_2017_real_plus_minus.csv")<br class="calibre9"/>
+br_stats_df = pd.read_csv("../data/nba_2017_br.csv")<br class="calibre9"/>
+elo_df = pd.read_csv("../data/nba_2017_elo.csv")</p>
+</div>
+<p class="noindent">In <a href="part0017.html#ch6fig3" class="calibre7">Figure 6.3</a>, a chain of DataFrames are created—a common practice when collecting data in  the wild.</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig3" class="calibre7"></a><img src="../images/00028.jpeg" aria-describedby="alt_06fig03" alt="A screenshot displays the Multiple DataFrames Output in Jupyter." class="calibre8"/>
+<aside class="hidden" id="alt_06fig03" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen displays 4 DataFrames output for the following Input commands. The In [3] filed reads, endorsement_df = pd.read_csv(“../data/nba_2017_endorsements.csv”); endrosement_df.head (). The Out [3] displays a table with 5 rows and 4 columns. the column header reads: NAME, TEAM, SALARY_MILLIONS, and ENDORSEMENT_MILLIONS. The In [4] filed reads, valuation_df = pd.read_csv(“../data/nba_2017_team_valuations.csv”); valuations_df.haed (). The out [4] filed displays a table with 5 rows and 2 columns. the column header reads, TEAM and VALUE_MILLIONS. The In [5] field reads, salary_df = pd.read_csv(“../data/nba_2017_salary.csv”); salary_df.head(). The out [5] filed displays a table with 5 rows and 4 columns. The column header reads: NAME, POSITION, TEAM, and SALARY. The In [6] field reads, pie_df = pd.read_csv(“../data/nba_2017_pie.csv”); pie_df.head(). The out [6] filed displays a table with 5 rows and 22 columns of data.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.3</span> Multiple DataFrames Output in Jupyter</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_104"></span>Here is a merge of attendance data with valuation data and a look at the first few rows.</p>
+<p class="codelink"><a id="p104pro01" href="part0035_split_006.html#p104pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [14]: attendance_valuation_df =\<br class="calibre9"/>
+ attendance_df.merge(valuations_df, how="inner", on="TEAM")<br class="calibre9"/>
+<br class="calibre9"/>
+In [15]: attendance_valuation_df.head()<br class="calibre9"/>
+Out[15]:<br class="calibre9"/>
+               TEAM  GMS  PCT  TOTAL_MILLIONS  AVG_MILLIONS<br class="calibre9"/>
+0     Chicago Bulls   41  104        0.888882      0.021680<br class="calibre9"/>
+1  Dallas Mavericks   41  103        0.811366      0.019789<br class="calibre9"/>
+2  Sacramento Kings   41  101        0.721928      0.017608<br class="calibre9"/>
+3        Miami Heat   41  100        0.805400      0.019643<br class="calibre9"/>
+4   Toronto Raptors   41  100        0.813050      0.019830</p>
+<p class="noindent">Perform a pairplot using Seaborn, which is shown in <a href="part0017.html#ch6fig4" class="calibre7">Figure 6.4</a>.</p>
+<p class="codelink"><a id="p104pro02" href="part0035_split_007.html#p104pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [15]: from IPython.core.display import display, HTML<br class="calibre9"/>
+    ...: display(HTML("&lt;style&gt;.\<br class="calibre9"/>
+container{ width:100% !important; }&lt;/style&gt;"));\<br class="calibre9"/>
+sns.pairplot(attendance_valuation_<br class="calibre9"/>
+    ...: df, hue="TEAM")</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig4" class="calibre7"></a><img src="../images/00029.jpeg" aria-describedby="alt_06fig04" alt="A screenshot displays pairplot using seaborn." class="calibre8"/>
+<aside class="hidden" id="alt_06fig04" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen displays a DataFrames output for the following Input commands. The In [13] filed reads, from Ipython.core.dosplay import display, HTML display (HTML( “&lt;style&gt;.container { width:100% !important; }&lt;/ style &gt;”)); sns.pairplot (attendance_valauation_df, hue=”TEAM” The out [13] filed displays, &lt;seaborn.axisgrid.pairGrid at 0x115f0fd68&gt;. A graphical representation of the out [13] is dispalyed. The graphs are shows in five rows and five columns. The horizontal and vertical axis of the graphs represents GMS, PCT, TOTAL_MILLIONS, AVG_MILLIONS, and VALUE_MILLIONS. On the right of the screen, a list of different team name are listed.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.4</span> Attendance/Valuation Pairplot</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_105"></span>In looking at the plots there appears to be a relationship between attendance, either average or total, and the valuation of the team. Another way to dig deeper into this relationship is to create a correlation heatmap, shown in <a href="part0017.html#ch6fig5" class="calibre7">Figure 6.5</a>.</p>
+<p class="codelink"><a id="p105pro01" href="part0035_split_008.html#p105pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [16]: corr = attendance_valuation_df.corr()<br class="calibre9"/>
+    ...: sns.heatmap(corr,<br class="calibre9"/>
+    ...:             xticklabels=corr.columns.values,<br class="calibre9"/>
+    ...:             yticklabels=corr.columns.values)<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[16]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x111007ac8&gt;</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig5" class="calibre7"></a><img src="../images/00030.jpeg" aria-describedby="alt_06fig05" alt="A screenshot of an Attendance or Valuation Correlation Heatmap is shown." class="calibre8"/>
+<aside class="hidden" id="alt_06fig05" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen reads, jupyter exploring_team_valuation_nba at the top. The output below displays, out [14] filed that reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x119ac05f8&gt;. The correlation Heatmap is shown below. The horizontal and the axes read GMS, PCT, TOTAL_MILLIONS, AVG_MILLIONS, and VALUE_MILLIONS. The shares scale is shown beside the Heatmap ranges from 0.5 to 10, in increments of 0.1 (in shades).</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.5</span> Attendance/Valuation Correlation Heatmap</p>
+</div>
+<p class="noindent">The relationship visible in the pairplot is now more quantifiable. The heatmap shows a medium correlation between valuation and attendance, hovering around 50 percent. Another heatmap shows average attendance numbers versus valuation for every team in the NBA. To generate this type of heatmap in Seaborn, it is necessary to convert the data into a pivot table first. The plot can then be seen in <a href="part0017.html#ch6fig5" class="calibre7">Figure 6.5</a>.</p>
+<p class="codelink"><a id="p105pro02" href="part0035_split_009.html#p105pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [18]: valuations = attendance_valuation_df.\<br class="calibre9"/>
+pivot("TEAM", "TOTAL_MILLIONS", "VALUE_MILLIONS")<br class="calibre9"/>
+In [19]: plt.subplots(figsize=(20,15))<br class="calibre9"/>
+    ...: ax = plt.axes()<br class="calibre9"/>
+    ...: ax.set_title("NBA Team AVG Attendance vs\<br class="calibre9"/>
+ Valuation in Millions:  2016-2017 Season")<br class="calibre9"/>
+    ...: sns.heatmap(valuations,linewidths=.5, annot=True, fmt='g')<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[19]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x114d3d080&gt;</p>
+<p class="noindent">In <a href="part0017.html#ch6fig6" class="calibre7">Figure 6.6</a>, a heatmap shows that there may be some interesting patterns to graph further, perhaps in a 3D plot. There are outliers in New York and Los Angles.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_106"></span><a id="ch6fig6" class="calibre7"></a><img src="../images/00031.jpeg" aria-describedby="alt_06fig06" alt="A screenshot of an N B A Teams Attendance versus Valuation Heatmap is shown." class="calibre8"/>
+<aside class="hidden" id="alt_06fig06" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen displays the output represented by a Heatmap. The field, Out [19] reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x119ac05f8&gt;. The heatmap for 2016 to 2017 season is shown below. The horizontal axis represents the TOTAL_MILLIONS and the vertical axis represents the TEAM. The heatmap scale is shown on the right ranging from 1000 to 3000 in increments of 500 (in shades).</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.6</span> NBA Teams Attendance versus Valuation Heatmap</p>
+</div>
+<h5 class="calibre17">Exploring First Data Sources with Regression</h5>
+<p class="noindent"><a href="part0017.html#ch6fig5" class="calibre7">Figure 6.5</a> shows some fascinating outliers, for example, the Brooklyn Nets are valued at 1.8 billion dollars, yet they have one of the lowest attendance rates in the NBA. Something is going on here that is worth looking at. One way to further investigate is to use linear regression to try to explain the relationship. There are a few different ways to do this if you include both Python and R. In Python, two of the more common approaches are the StatsModels package and scikit-learn.  Let’s explore both approaches.</p>
+<p class="noindent">With StatsModels, there is a great diagnostic output about performing a linear regression, and it has the feel of classic linear regression software like Minitab and R.</p>
+<p class="codelink"><a id="p106pro01" href="part0035_split_010.html#p106pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [24]: results = smf.ols(<br class="calibre9"/>
+         'VALUE_MILLIONS ~TOTAL_MILLIONS',<br class="calibre9"/>
+         data=attendance_valuation_df).fit()<br class="calibre9"/>
+<br class="calibre9"/>
+In [25]: print(results.summary())<br class="calibre9"/>
+                            OLS Regression Results                  <br class="calibre9"/>
+===============================================================<br class="calibre9"/>
+Dep. Variable:         VALUE_MILLIONS   R-squared:           0.282<br class="calibre9"/>
+Model:                            OLS   Adj. R-squared:      0.256<br class="calibre9"/>
+Method:                 Least Squares   F-statistic:         10.98<br class="calibre9"/>
+Date:                Thu, 10 Aug 2017   Prob (F-statistic):0.00255<br class="calibre9"/>
+Time:                        14:21:16   Log-Likelihood:    -234.04<br class="calibre9"/>
+No. Observations:                  30   AIC:                 472.1<br class="calibre9"/>
+Df Residuals:                      28   BIC:                 474.9<br class="calibre9"/>
+Df Model:                           1                                <br class="calibre9"/>
+Covariance Type:            nonrobust                                <br class="calibre9"/>
+================================================================<br class="calibre9"/>
+                     coef    std err          t  P&gt;|t|[0.025 0.975]<br class="calibre9"/>
+------------------------------------------------------------------<br class="calibre9"/>
+.....<br class="calibre9"/>
+Warnings:<br class="calibre9"/>
+[1] Standard Errors assume that the covariance matrix of the errors<br class="calibre9"/>
+is correctly specified.</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_107"></span>In looking at the results of the regression, it does appear that the variable TOTAL_MILLIONS, which is total attendance in millions is statistically significant (measured in a <em class="calibre5">P</em> value of less than .05) in predicting changes in attendance. The R-squared value of .282 (or 28 percent) shows a “goodness of fit”; that is, how well the regression line perfectly fits the data.</p>
+<p class="noindent">Doing a bit more plotting and diagnostics will show how well this model is able to predict. Seaborn has a built in and very useful residplot that plots the residuals. This is shown in <a href="part0017.html#ch6fig7" class="calibre7">Figure 6.7</a>. Having randomly distributed residuals is the ideal scenario; if there are patterns in the plot, it could indicate issues with the model. In this case, there doesn’t seem to be a uniformly random pattern.</p>
+<p class="codelink"><a id="p107pro01" href="part0035_split_012.html#p107pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [88]: sns.residplot(y="VALUE_MILLIONS", x="TOTAL_MILLIONS",<br class="calibre9"/>
+    ...: data=attendance_valuation_df)<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[88]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x114d3d080&gt;<br class="calibre9"/>
+</p>
+<div class="figure">
+<div class="image1"><a id="ch6fig7" class="calibre7"></a><img src="../images/00032.jpeg" aria-describedby="alt_06fig07" alt="A screenshot displays an N B A Teams Attendance versus Valuation Residual Plot." class="calibre8"/>
+<aside class="hidden" id="alt_06fig07" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The field, In [20] reads, sns.residplot (y=”VALUE_MILLION”, x= “TOTAL_MILLIONS” , data=attendance_valuation_df). The filed Out [20] reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x119ac05f8&gt;. A scattered plotted graph is shown below. The horizontal axis of the graph represents TOTAL_MILLIONS ranging from 0.60 to 0.90, in increments 0.5 and the vertical axis represents VALUE_MILLIONS ranging from minus 500 to 1500, in increments of 500. A dotted horizontal line is shown from the 0 on the vertical axis. The values are plotted more clustered below 0 value within 0.65 to 0.85 in total_millions and shown distributed above the 0.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.7</span> NBA Teams Attendance versus Valuation Residual Plot</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_108"></span>A common way to measure the accuracy of an ML or statistics prediction is to look at the root mean squared error (RMSE). Here is how to do it with the StatsModels.</p>
+<p class="codelink"><a id="p108pro01" href="part0035_split_013.html#p108pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [92]: import statsmodels<br class="calibre9"/>
+    ...: rmse = statsmodels.tools.eval_measures.rmse(<br class="calibre9"/>
+         attendance_valuation_predictions_df["predicted"],<br class="calibre9"/>
+         attendance_valuation_predict<br class="calibre9"/>
+    ...: ions_df["VALUE_MILLIONS"])<br class="calibre9"/>
+    ...: rmse<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[92]: 591.33219017442696</p>
+<p class="noindent">The lower the RMSE, the better the prediction. To get a better prediction accuracy, we need to figure out a way to lower this RMSE. In addition, having a larger set of data such that the model could be split into test versus training data would ensure better accuracy and reduce the chance of overfitting. A further diagnostic step is to plot the predicted values of the linear regression versus the actual values. In <a href="part0017.html#ch6fig8" class="calibre7">Figure 6.8</a>, an <code class="calibre11">lmplot</code> of the predicted and actual is shown, and it is obvious that this isn’t that great a prediction model. It is a good start though, and often this is how ML models are created— by finding correlations and/or statistically significant relationships, then deciding it is worth the effort to collect more data.</p>
+<div class="figure">
+<div class="image1"><img src="../images/00033.jpeg" aria-describedby="alt_06fig08" alt="A screenshot displays Predicted versus Actual Plot of Team Valuation." class="calibre8"/>
+<aside class="hidden" id="alt_06fig08" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The field, In [186] reads, sns. Import (x= “predicated”, y=”VALUE_MILLION”, data=attendance_valuation_predications_df). The filed Out [186] reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x119ac05f8&gt;. A scattered plotted graph is shown below. The horizontal axis of the graph represents predicated ranging from 800 to 2200, in increments of 200 and the vertical axis represents VALUE_MILLION ranging from 500 to 3000, in increments of 500. An inclining line toward the right starts from the VALUE_MILLION, 600 is shown. The points are shown more clustered below the line between 1000 and 2000 along the horizontal and scattered above the line.</p>
+</aside>
+</div>
+<p class="fig_caption"><a id="ch6fig8" class="calibre7"></a><span class="calibre6">Figure 6.8</span> Predicted versus Actual Plot of Team Valuation</p>
+</div>
+<p class="noindent">An initial conclusion is that while there is a relationship between attendance and valuation of an NBA team, there are missing or <em class="calibre5">latent variables</em>. An initial hunch is that population of the region, <span epub:type="pagebreak" id="page_109"></span>median real estate prices, and how good the team is (ELO ranking and winning percentage) all could play a role here.</p>
+<p class="codelink"><a id="p109pro01" href="part0035_split_014.html#p109pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [89]: attendance_valuation_predictions_df =\<br class="calibre9"/>
+         attendance_valuation_df.copy()<br class="calibre9"/>
+<br class="calibre9"/>
+In [90]: attendance_valuation_predictions_df["predicted"] =\<br class="calibre9"/>
+         results.predict()<br class="calibre9"/>
+<br class="calibre9"/>
+In [91]: sns.lmplot(x="predicted", y="VALUE_MILLIONS",\<br class="calibre9"/>
+         data=attendance_valuation_predictions_df)<br class="calibre9"/>
+Out[91]: &lt;seaborn.axisgrid.FacetGrid at 0x1178d2198&gt;</p>
+<h5 class="calibre17">Unsupervised Machine Learning: Clustering First Data Sources</h5>
+<p class="noindent">A next step in learning more about NBA teams is to use unsupervised ML to cluster the data to find more insights. I was able to manually find median home price data for a county on  <a href="https://www.zillow.com/research/" class="calibre7">https://www.zillow.com/research/</a> and the population for each county from the census on <a href="https://www.census.gov/data/tables/2016/demo/popest/counties-total.html" class="calibre7">https://www.census.gov/data/tables/2016/demo/popest/counties-total.html</a>.</p>
+<p class="noindent">All this new data can be loaded with a new DataFrame.</p>
+<p class="codelink"><a id="p109pro02" href="part0035_split_015.html#p109pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [99]: val_housing_win_df =  pd.read_csv("../data/nba_2017_att_val_elo_win_housing.csv")<br class="calibre9"/>
+In [100]: val_housing_win_df.columns<br class="calibre9"/>
+Out[100]:<br class="calibre9"/>
+Index(['TEAM', 'GMS', 'PCT_ATTENDANCE', 'WINNING_SEASON',<br class="calibre9"/>
+       'TOTAL_ATTENDANCE_MILLIONS', 'VALUE_MILLIONS',<br class="calibre9"/>
+        'ELO', 'CONF', 'COUNTY',<br class="calibre9"/>
+        'MEDIAN_HOME_PRICE_COUNTY_MILLONS',<br class="calibre9"/>
+        'COUNTY_POPULATION_MILLIONS'],<br class="calibre9"/>
+      dtype='object')</p>
+<p class="noindent">k-nearest neighbors (kNN) clustering works by determining the Euclidean distance between points. Attributes being clustered needed to be scaled so one attribute doesn’t have a different scale than another, which would distort the clustering. In addition, clustering is more art than science, and picking the correct number of clusters can be a trial-and-error process. Here is how scaling works in practice.</p>
+<p class="codelink"><a id="p109pro03" href="part0035_split_016.html#p109pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [102]: numerical_df = val_housing_win_df.loc[:,\<br class="calibre9"/>
+["TOTAL_ATTENDANCE_MILLIONS", "ELO", "VALUE_MILLIONS",<br class="calibre9"/>
+ "MEDIAN_HOME_PRICE_COUNT<br class="calibre9"/>
+     ...: Y_MILLONS"]]<br class="calibre9"/>
+In [103]: from sklearn.preprocessing import MinMaxScaler<br class="calibre9"/>
+     ...: scaler = MinMaxScaler()<br class="calibre9"/>
+     ...: print(scaler.fit(numerical_df))<br class="calibre9"/>
+     ...: print(scaler.transform(numerical_df))<br class="calibre9"/>
+MinMaxScaler(copy=True, feature_range=(0, 1))<br class="calibre9"/>
+[[ 1.         0.41898148  0.68627451  0.08776879]<br class="calibre9"/>
+ [ 0.72637903  0.18981481  0.2745098   0.11603661]<br class="calibre9"/>
+ [ 0.41067502  0.12731481  0.12745098  0.13419221]…</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_110"></span>In this example, MinMaxScaler is being used from scikit-learn. It converts all numerical values to a value between 0 and 1. Next, sklearn.cluster is performed against the scaled data, and then the cluster results are attached to a new column.</p>
+<p class="codelink"><a id="p110pro01" href="part0035_split_017.html#p110pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [104]: from sklearn.cluster import KMeans<br class="calibre9"/>
+     ...: k_means = KMeans(n_clusters=3)<br class="calibre9"/>
+     ...: kmeans = k_means.fit(scaler.transform(numerical_df))<br class="calibre9"/>
+     ...: val_housing_win_df['cluster'] = kmeans.labels_<br class="calibre9"/>
+     ...: val_housing_win_df.head()<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+Out[104]:<br class="calibre9"/>
+               TEAM  GMS  PCT_ATTENDANCE  WINNING_SEASON  \<br class="calibre9"/>
+0     Chicago Bulls   41             104               1  <br class="calibre9"/>
+1  Dallas Mavericks   41             103               0  <br class="calibre9"/>
+2  Sacramento Kings   41             101               0  <br class="calibre9"/>
+3        Miami Heat   41             100               1  <br class="calibre9"/>
+4   Toronto Raptors   41             100               1  <br class="calibre9"/>
+   TOTAL_ATTENDANCE_MILLIONS  VALUE_MILLIONS   ELO  CONF<br class="calibre9"/>
+0                   0.888882            2500  1519  East<br class="calibre9"/>
+1                   0.811366            1450  1420  West<br class="calibre9"/>
+2                   0.721928            1075  1393  West<br class="calibre9"/>
+3                   0.805400            1350  1569  East<br class="calibre9"/>
+4                   0.813050            1125  1600  East<br class="calibre9"/>
+   MEDIAN_HOME_PRICE_COUNTY_MILLONS  cluster  <br class="calibre9"/>
+0                          269900.0    1  <br class="calibre9"/>
+1                          314990.0    1  <br class="calibre9"/>
+2                          343950.0    0  <br class="calibre9"/>
+3                          389000.0    1  <br class="calibre9"/>
+4                          390000.0    1</p>
+<p class="noindent">At this point, there is enough of a solution to provide instant value to a company, and the beginning of a data pipeline is forming. Next let’s use R and ggplot to plot the clusters. In order to bring this data set into R, we can write this out to a CSV file.</p>
+<p class="codelink"><a id="p110pro02" href="part0035_split_018.html#p110pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [105]: val_housing_win_df.to_csv(<br class="calibre9"/>
+"../data/nba_2017_att_val_elo_win_housing_cluster.csv"<br class="calibre9"/>
+)  </p>
+<h5 class="calibre17">Plotting kNN Clustering in 3D with R</h5>
+<p class="noindent">A highlight of the R language is the ability to create advanced plots with meaningful text. Being capable of coding solutions in R and Python opens up a wider variety of solutions in ML. In this particular situation, we are going to use the R 3D scatter plot library along with RStudio to make a sophisticated plot of the relationships we have learned about using kNN cluster. In the GitHub project for this chapter, there is R markdown notebook that has the code and plot; you can also follow along by using the preview function in RStudio for notebooks.</p>
+<p class="noindent">To get started in the console in RStudio (or an R shell), import the scatterplot3d library and load the data using the following commands.</p>
+<p class="codelink"><a id="p110pro03" href="part0035_split_019.html#p110pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; library("scatterplot3d",<br class="calibre9"/>
+        lib.loc="/Library/Frameworks/R.framework/\<br class="calibre9"/>
+        Versions/3.4/Resources/library")<br class="calibre9"/>
+&gt; team_cluster &lt;- read_csv("~/src/aibook/src/chapter7/data/\<br class="calibre9"/>
+nba_2017_att_val_elo_win_housing_cluster.csv",<br class="calibre9"/>
++                          col_types = cols(X1 = col_skip()))</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_111"></span>Next, a function is created to convert the data types into a format that the scatterplot3d library is expecting.</p>
+<p class="codelink"><a id="p111pro01" href="part0035_split_020.html#p111pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; cluster_to_numeric &lt;- function(column){<br class="calibre9"/>
++     converted_column &lt;- as.numeric(unlist(column))<br class="calibre9"/>
++     return(converted_column)<br class="calibre9"/>
++ }</p>
+<p class="noindent">A new column is created to hold color data about each cluster.</p>
+<p class="codelink"><a id="p111pro02" href="part0035_split_021.html#p111pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; team_cluster$pcolor[team_cluster$cluster == 0] &lt;- "red"<br class="calibre9"/>
+&gt; team_cluster$pcolor[team_cluster$cluster == 1] &lt;- "blue"<br class="calibre9"/>
+&gt; team_cluster$pcolor[team_cluster$cluster == 2] &lt;- "darkgreen"</p>
+<p class="noindent">A skeleton 3D plot is created.</p>
+<p class="codelink"><a id="p111pro03" href="part0035_split_022.html#p111pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; s3d &lt;- scatterplot3d(<br class="calibre9"/>
++     cluster_to_numeric(team_cluster["VALUE_MILLIONS"]),<br class="calibre9"/>
++     cluster_to_numeric(<br class="calibre9"/>
+        team_cluster["MEDIAN_HOME_PRICE_COUNTY_MILLIONS"]),<br class="calibre9"/>
++     cluster_to_numeric(team_cluster["ELO"]),<br class="calibre9"/>
++     color = team_cluster$pcolor,<br class="calibre9"/>
++     pch=19,<br class="calibre9"/>
++     type="h",<br class="calibre9"/>
++     lty.hplot=2,<br class="calibre9"/>
++     main="3-D Scatterplot NBA Teams 2016-2017:<br class="calibre9"/>
+  Value, Performance, Home Prices with kNN Clustering",<br class="calibre9"/>
++     zlab="Team Performance (ELO)",<br class="calibre9"/>
++     xlab="Value of Team in Millions",<br class="calibre9"/>
++     ylab="Median Home Price County Millions"<br class="calibre9"/>
++ )<br class="calibre9"/>
+&gt;</p>
+<p class="noindent">To plot the text in the correct location on the 3D space requires a little bit of work.</p>
+<p class="codelink"><a id="p111pro04" href="part0035_split_023.html#p111pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">s3d.coords &lt;- s3d$xyz.convert(<br class="calibre9"/>
+cluster_to_numeric(team_cluster["VALUE_MILLIONS"]),<br class="calibre9"/>
+                              cluster_to_numeric(<br class="calibre9"/>
+team_cluster["MEDIAN_HOME_PRICE_COUNTY_MILLIONS"]),<br class="calibre9"/>
+                cluster_to_numeric(team_cluster["ELO"]))<br class="calibre9"/>
+<br class="calibre9"/>
+#plot text<br class="calibre9"/>
+text(s3d.coords$x, s3d.coords$y,     # x and y coordinates<br class="calibre9"/>
+     labels=team_cluster$TEAM,       # text to plot<br class="calibre9"/>
+     pos=4, cex=.6)                  # shrink text)</p>
+<p class="noindent">The plot shown in <a href="part0017.html#ch6fig9" class="calibre7">Figure 6.9</a> shows some unusual patterns. The New York Knicks and the Los Angeles Lakers are two of the worst teams in basketball, yet are the most valuable. In addition, you can see that they are in cities that have some of the highest median home prices, which is playing a role in their high valuation. As a result of all of this, they are in their own cluster.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_112"></span><a id="ch6fig9" class="calibre7"></a><img src="../images/00034.jpeg" aria-describedby="alt_06fig09" alt="A 3D Scatter Plot of NBA Teams: 2016-2017 with k N N is shown." class="calibre8"/>
+<aside class="hidden" id="alt_06fig09" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis of the graph represents Team Performance (E L O) ranging from 1300 to 1800, in increments of 100. The vertical axis represents Value of Team in Millions ranging from 500 to 3500, in increments of 500. The numeric axis on the right ranges from 0 to 2000000, in increments of 500000. The more teams are plotted between 500 and 1500 than others along the horizontal axis. A cluster of three shades marked 0, 1, and 2 are shown at the top of the graph.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.9</span> 3D Scatter Plot of NBA Teams: 2016-2017 with kNN</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_113"></span>The blue cluster is mostly a collection of the best teams in the NBA. They also tend to be in cities with higher median home prices but a wide variation of actual value. This makes me suspect that real estate plays a bigger role in team valuation than actual performance (which lines up with previous linear regressions).</p>
+<p class="noindent">The red cluster shows teams that are generally below average in performance, have below-average valuation, and have below-average real estate prices. The exception is the Brooklyn Nets, which is on its way to being a Los Angeles Lakers– and New York Knicks–type team: low performing, yet highly valued.</p>
+<p class="noindent">R has yet one more way to visualize these relationships in multiple dimensions. Next, we are going to create a plot using ggplot in R.</p>
+<p class="noindent">The first thing to do in plotting the relationship in the new graph is to make a logical name for the clusters. The 3D plot gave us some great ideas about how to name clusters. Cluster 0 appears to be a low valuation/low performance cluster, Cluster 1 is a medium valuation/high performance cluster, and Cluster 2 is a high valuation/low performance cluster. One note to add is that cluster number selection is a complex subject. (See <a href="part0024.html#appendixb" class="calibre7">Appendix B</a> for more information on the topic.)</p>
+<p class="codelink"><a id="p113pro01" href="part0035_split_024.html#p113pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; team_cluster &lt;- read_csv("nba_cluster.csv",<br class="calibre9"/>
++                          col_types = cols(X1 = col_skip()))<br class="calibre9"/>
+&gt; library("ggplot2")<br class="calibre9"/>
+&gt;<br class="calibre9"/>
+&gt; #Name Clusters<br class="calibre9"/>
+&gt; team_cluster$cluster_name[team_cluster$cluster == 0] &lt;- "Low"<br class="calibre9"/>
+Unknown or uninitialised column: 'cluster_name'.<br class="calibre9"/>
+&gt; team_cluster$cluster_name[team_cluster$<br class="calibre9"/>
+        cluster == 1] &lt;- "Medium Valuation/High Performance"<br class="calibre9"/>
+&gt; team_cluster$cluster_name[team_cluster$<br class="calibre9"/>
+        cluster == 2] &lt;- "High Valuation/Low Performance"</p>
+<p class="noindent">Next, we can use these cluster names to facet (create multiple plots in each plot). In addition, ggplot has the ability to create many other dimensions, and we are going to use them all: color to show winning team percentages and losing team percentages, size to show the differences in median home prices in the county, and the shape to represent the Eastern or Western Conference of the NBA.</p>
+<p class="codelink"><a id="p113pro02" href="part0035_split_025.html#p113pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; p &lt;- ggplot(data = team_cluster) +<br class="calibre9"/>
++     geom_point(mapping = aes(x = ELO,<br class="calibre9"/>
++                              y = VALUE_MILLIONS,<br class="calibre9"/>
++                              color =<br class="calibre9"/>
+factor(WINNING_SEASON, labels=<br class="calibre9"/>
+c("LOSING","WINNING")),<br class="calibre9"/>
++size = MEDIAN_HOME_PRICE_COUNTY_MILLIONS,<br class="calibre9"/>
++                              shape = CONF)) +<br class="calibre9"/>
++     facet_wrap(~ cluster_name) +<br class="calibre9"/>
++     ggtitle("NBA Teams 2016-2017 Faceted Plot") +<br class="calibre9"/>
++     ylab("Value NBA Team in Millions") +<br class="calibre9"/>
++     xlab("Relative Team Performance (ELO)") +<br class="calibre9"/>
++     geom_text(aes(x = ELO, y = VALUE_MILLIONS,<br class="calibre9"/>
++ label=ifelse(VALUE_MILLIONS&gt;1200,<br class="calibre9"/>
++ as.character(TEAM),'')),hjust=.35,vjust=1)</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_114"></span>Notice that geom_text only prints the name of the team if the valuation is over 1200. This allows the plot to be more readable and not overwhelmed with overlapping text. In the final snippet, the legend titles are changed. Note also the color is changed to be a factor with one of two values, versus the default of 0, .25, .50, 1. The output of the plot appears in <a href="part0017.html#ch6fig10" class="calibre7">Figure 6.10</a>. The faceting feature of ggplot really shows how clustering has added value to the exploration of data. Using R to do advanced plotting is a great idea even if you are an expert at another ML language like Python or Scala. The results speak for themselves.</p>
+<p class="codelink"><a id="p114pro01" href="part0035_split_026.html#p114pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">#Change legends<br class="calibre9"/>
+p +<br class="calibre9"/>
+    guides(color = guide_legend(title = "Winning Season")) +<br class="calibre9"/>
+    guides(size = guide_legend(<br class="calibre9"/>
++ title = "Median Home Price County in Millions" )) +<br class="calibre9"/>
+    guides(shape = guide_legend(title = "NBA Conference"))</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_115"></span><a id="ch6fig10" class="calibre7"></a><img src="../images/00035.jpeg" aria-describedby="alt_06fig10" alt="A ggplot Faceted Plot of NBA Teams: 2016-2017 with kNN is shown." class="calibre8"/>
+<aside class="hidden" id="alt_06fig10" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">Three combined graph that represents High Valuation or Low Performance, Low Valuation or Low Performance, and Medium Valuation or High Performance. The horizontal axis of the graphs represents Relative Team Performance (ELO) ranging from 1300 to 1800, in increments of 100, respectively. The vertical axis of the graphs represents Value N B A-Team in Millions ranging from 1000 to 3000, in increments 500. The legend on the right shows three sections. The first section represents the Median Home Price Country in Millions shows four circles of different sizes ranging from 400000 to 1600000 where the smallest circle denotes 400000 and the biggest denotes 1600000. The second section represents Winning Season that shows two shaded where the lighter shade denotes WINNING and the darker share denotes LOSING. The third section represents N B A Conference that shows a circle and a triangle denoting East and West, respectively. The first graph shows the combination of the Median Home Price Country, 1200000 (in million); the Winning Season, losing and the N B A Conference, West. The second graph shows the combination of the Median Home Price Country, 400000 and 800000 (in million); the Winning Season, losing and winning; and the N B A Conference, West. The third graph shows the combination of the Median Home Price Country, 400000 and 800000 (in million); the Winning Season, losing and the N B A Conference, West.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.10</span> ggplot Faceted Plot of NBA Teams: 2016-2017 with kNN</p>
+</div>
+<h3 id="ch06lev2" class="calibre12"><span epub:type="pagebreak" id="page_116" class="calibre2"></span>Collecting Challenging Data Sources</h3>
+<p class="noindent">With a good set of data around teams already collected, it is time to get into more challenging data sources. This is where things start to get more real. There are some huge issues with collecting random data sources: API limits, undocumented APIs, dirty data, and more.</p>
+<h4 id="ch06lev2sub1" class="calibre16">Collecting Wikipedia Pageviews for Athletes</h4>
+<p class="noindentb">Here are a few of the problems to solve.</p>
+<p class="number">1. How to reverse engineer the Wikipedia system to get pageviews (or find hidden API documentation)</p>
+<p class="number">2. How to find a way to generate Wikipedia handles (they may not be the same name as their NBA name)</p>
+<p class="numberb">3. How to join the DataFrame with the rest of the data</p>
+<p class="noindent">Here is how to accomplish this in Python. The entire source for this example is in the GitHub repo for the book, but it will be analyzed in these sections. Below is the example URL for Wikipedia pageviews and the four modules needed. The requests library will make the HTTP calls, Pandas will convert the results into a DataFrame, and the Wikipedia library will be used for a heuristic around detecting the proper Wikipedia URL for an athlete.</p>
+<p class="codelink"><a id="p116pro01" href="part0035_split_027.html#p116pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">"""<br class="calibre9"/>
+Example Route To Construct:<br class="calibre9"/>
+<br class="calibre9"/>
+https://wikimedia.org/api/rest_v1/ +<br class="calibre9"/>
+metrics/pageviews/per-article/ +<br class="calibre9"/>
+en.wikipedia/all-access/user/ +<br class="calibre9"/>
+LeBron_James/daily/2015070100/2017070500 +<br class="calibre9"/>
+<br class="calibre9"/>
+"""<br class="calibre9"/>
+import requests<br class="calibre9"/>
+import pandas as pd<br class="calibre9"/>
+import time<br class="calibre9"/>
+import wikipedia<br class="calibre9"/>
+<br class="calibre9"/>
+BASE_URL =\<br class="calibre9"/>
+  "https://wikimedia.org/api/rest_v1/\<br class="calibre9"/>
+metrics/pageviews/per-article/en.wikipedia/all-access/user"</p>
+<p class="noindent">Next, the following code constructs a URL that has the data range and username.</p>
+<p class="codelink"><a id="p116pro02" href="part0035_split_028.html#p116pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def construct_url(handle, period, start, end):<br class="calibre9"/>
+    """Constructs a URL based on arguments<br class="calibre9"/>
+<br class="calibre9"/>
+    Should construct the following URL:<br class="calibre9"/>
+    /LeBron_James/daily/2015070100/2017070500<br class="calibre9"/>
+    """<br class="calibre9"/>
+<br class="calibre9"/>
+    <br class="calibre9"/>
+    urls  = [BASE_URL, handle, period, start, end]<br class="calibre9"/>
+    constructed = str.join('/', urls)<br class="calibre9"/>
+    return constructed<br class="calibre9"/>
+<br class="calibre9"/>
+def query_wikipedia_pageviews(url):<br class="calibre9"/>
+<br class="calibre9"/>
+    res = requests.get(url)<br class="calibre9"/>
+    return res.json()<br class="calibre9"/>
+<br class="calibre9"/>
+def wikipedia_pageviews(handle, period, start, end):<br class="calibre9"/>
+    """Returns JSON"""<br class="calibre9"/>
+<br class="calibre9"/>
+    constructed_url = construct_url(handle, period, start,end)<br class="calibre9"/>
+    pageviews = query_wikipedia_pageviews(url=constructed_url)<br class="calibre9"/>
+    return pageviews</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_117"></span>The following function automatically populates a query for 2016. This could later be made more abstract, but for now, this is “hacker” code where hard coding things for speed may be worth the technical debt. Notice as well that a sleep is set to 0 but may need to be enabled if we hit API limits. This is a common pattern when first hitting APIs; they could behave in unexpected ways, so sleeping at some interval can often work around this issue, again, as a temporary hack.</p>
+<p class="codelink"><a id="p117pro01" href="part0035_split_029.html#p117pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def wikipedia_2016(handle,sleep=0):<br class="calibre9"/>
+    """Retrieve pageviews for 2016"""<br class="calibre9"/>
+    <br class="calibre9"/>
+    print("SLEEP: {sleep}".format(sleep=sleep))<br class="calibre9"/>
+    time.sleep(sleep)<br class="calibre9"/>
+    pageviews = wikipedia_pageviews(handle=handle,<br class="calibre9"/>
+            period="daily", start="2016010100", end="2016123100")<br class="calibre9"/>
+    if not 'items' in pageviews:<br class="calibre9"/>
+        print("NO PAGEVIEWS: {handle}".format(handle=handle))<br class="calibre9"/>
+        return None<br class="calibre9"/>
+    return pageviews</p>
+<p class="noindent">Next, the results are converted into a Pandas DataFrame.</p>
+<p class="codelink"><a id="p117pro02" href="part0035_split_030.html#p117pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def create_wikipedia_df(handles):<br class="calibre9"/>
+    """Creates a Dataframe of Pageviews"""<br class="calibre9"/>
+<br class="calibre9"/>
+    pageviews = []<br class="calibre9"/>
+    timestamps = []    <br class="calibre9"/>
+    names = []<br class="calibre9"/>
+    wikipedia_handles = []<br class="calibre9"/>
+    for name, handle in handles.items():<br class="calibre9"/>
+        pageviews_record = wikipedia_2016(handle)<br class="calibre9"/>
+        if pageviews_record is None:<br class="calibre9"/>
+            continue<br class="calibre9"/>
+        for record in pageviews_record['items']:<br class="calibre9"/>
+            pageviews.append(record['views'])<br class="calibre9"/>
+            timestamps.append(record['timestamp'])<br class="calibre9"/>
+            names.append(name)<br class="calibre9"/>
+            wikipedia_handles.append(handle)<br class="calibre9"/>
+    data = {<br class="calibre9"/>
+        "names": names,<br class="calibre9"/>
+        "wikipedia_handles": wikipedia_handles,<br class="calibre9"/>
+        "pageviews": pageviews,<br class="calibre9"/>
+        "timestamps": timestamps<br class="calibre9"/>
+    }<br class="calibre9"/>
+    df = pd.DataFrame(data)<br class="calibre9"/>
+    return df  </p>
+<p class="noindent"><span epub:type="pagebreak" id="page_118"></span>A trickier section of the code begins here because some heuristics are needed to guess the right handle. For a first pass, a guess is made that most handles are simply <code class="calibre11">first_last</code>. A second pass appends “(basketball)” to the name, which is a common Wikipedia strategy for disambiguation.</p>
+<p class="codelink"><a id="p118pro01" href="part0035_split_031.html#p118pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def create_wikipedia_handle(raw_handle):<br class="calibre9"/>
+    """Takes a raw handle and converts it to a wikipedia handle"""<br class="calibre9"/>
+<br class="calibre9"/>
+    wikipedia_handle = raw_handle.replace(" ", "_")<br class="calibre9"/>
+    return wikipedia_handle<br class="calibre9"/>
+<br class="calibre9"/>
+def create_wikipedia_nba_handle(name):<br class="calibre9"/>
+    """Appends basketball to link"""<br class="calibre9"/>
+<br class="calibre9"/>
+    url = " ".join([name, "(basketball)"])<br class="calibre9"/>
+    return url<br class="calibre9"/>
+<br class="calibre9"/>
+def wikipedia_current_nba_roster():<br class="calibre9"/>
+    """Gets all links on wikipedia current roster page"""<br class="calibre9"/>
+<br class="calibre9"/>
+    links = {}<br class="calibre9"/>
+    nba = wikipedia.page("List_of_current_NBA_team_rosters")<br class="calibre9"/>
+    for link in nba.links:<br class="calibre9"/>
+        links[link] = create_wikipedia_handle(link)<br class="calibre9"/>
+    return links</p>
+<p class="noindent">This code runs both heuristics and returns verified handles and guesses.</p>
+<p class="codelink"><a id="p118pro02" href="part0035_split_032.html#p118pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def guess_wikipedia_nba_handle(data="data/nba_2017_br.csv"):<br class="calibre9"/>
+    """Attempt to get the correct wikipedia handle"""<br class="calibre9"/>
+<br class="calibre9"/>
+    links = wikipedia_current_nba_roster()<br class="calibre9"/>
+    nba = pd.read_csv(data)<br class="calibre9"/>
+    count = 0<br class="calibre9"/>
+    verified = {}<br class="calibre9"/>
+    guesses = {}<br class="calibre9"/>
+    for player in nba["Player"].values:<br class="calibre9"/>
+        if player in links:<br class="calibre9"/>
+            print("Player: {player}, Link: {link} ".\<br class="calibre9"/>
+        format(player=player,<br class="calibre9"/>
+                 link=links[player]))<br class="calibre9"/>
+            print(count)<br class="calibre9"/>
+            count += 1<br class="calibre9"/>
+            verified[player] = links[player] #add wikipedia link<br class="calibre9"/>
+        else:<br class="calibre9"/>
+            print("NO MATCH: {player}".format(player=player))<br class="calibre9"/>
+            guesses[player] = create_wikipedia_handle(player)<br class="calibre9"/>
+    return verified, guesses</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_119"></span>Next, the Wikipedia Python library is used to convert failed initial guesses of first and last name and looks for “NBA” in the page summary. This is another decent hack to get a few more matches.</p>
+<p class="codelink"><a id="p119pro01" href="part0035_split_033.html#p119pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def validate_wikipedia_guesses(guesses):<br class="calibre9"/>
+    """Validate guessed wikipedia accounts"""<br class="calibre9"/>
+<br class="calibre9"/>
+    verified = {}<br class="calibre9"/>
+    wrong = {}<br class="calibre9"/>
+    for name, link in guesses.items():<br class="calibre9"/>
+        try:<br class="calibre9"/>
+            page = wikipedia.page(link)<br class="calibre9"/>
+        except (wikipedia.DisambiguationError,<br class="calibre9"/>
+        wikipedia.PageError) as error:<br class="calibre9"/>
+            #try basketball suffix<br class="calibre9"/>
+            nba_handle = create_wikipedia_nba_handle(name)<br class="calibre9"/>
+            try:<br class="calibre9"/>
+                page = wikipedia.page(nba_handle)<br class="calibre9"/>
+                print("Initial wikipedia URL Failed:\<br class="calibre9"/>
+                 {error}".format(error=error))<br class="calibre9"/>
+            except (wikipedia.DisambiguationError,<br class="calibre9"/>
+                 wikipedia.PageError) as error:<br class="calibre9"/>
+                print("Second Match Failure: {error}".\<br class="calibre9"/>
+            format(error=error))<br class="calibre9"/>
+                wrong[name] = link<br class="calibre9"/>
+                continue<br class="calibre9"/>
+        if "NBA" in page.summary:<br class="calibre9"/>
+            verified[name] = link<br class="calibre9"/>
+        else:<br class="calibre9"/>
+            print("NO GUESS MATCH: {name}".format(name=name))<br class="calibre9"/>
+            wrong[name] = link<br class="calibre9"/>
+    return verified, wrong</p>
+<p class="noindent">At the end of the script, everything is run and the output is used to create a new CSV file.</p>
+<p class="codelink"><a id="p119pro02" href="part0035_split_034.html#p119pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def clean_wikipedia_handles(data="data/nba_2017_br.csv"):<br class="calibre9"/>
+    """Clean Handles"""<br class="calibre9"/>
+<br class="calibre9"/>
+    verified, guesses = guess_wikipedia_nba_handle(data=data)<br class="calibre9"/>
+    verified_cleaned, wrong = validate_wikipedia_guesses(guesses)<br class="calibre9"/>
+    print("WRONG Matches: {wrong}".format(wrong=wrong))<br class="calibre9"/>
+    handles = {**verified, **verified_cleaned}<br class="calibre9"/>
+    return handles<br class="calibre9"/><br class="calibre9"/>
+def nba_wikipedia_dataframe(data="data/nba_2017_br.csv"):<br class="calibre9"/>
+    handles = clean_wikipedia_handles(data=data)<br class="calibre9"/>
+    df = create_wikipedia_df(handles)    <br class="calibre9"/>
+    return df<br class="calibre9"/>
+<br class="calibre9"/>
+def create_wikipedia_csv(data="data/nba_2017_br.csv"):<br class="calibre9"/>
+    df = nba_wikipedia_dataframe(data=data)<br class="calibre9"/>
+    df.to_csv("data/wikipedia_nba.csv")<br class="calibre9"/>
+<br class="calibre9"/>
+if __name__ == "__main__":<br class="calibre9"/>
+    create_wikipedia_csv()</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_120"></span>All together, something like this can take anywhere from a few hours to a few days and represents the realism of slogging through random data sources to solve a problem.</p>
+<h4 id="ch06lev2sub2" class="calibre16">Collecting Twitter Engagement for Athletes</h4>
+<p class="noindentb">Collection of data from Twitter has elements that are a bit easier. For one thing, there is a great library in Python, aptly named twitter. There are still some challenges as well, however. Here they are laid out.</p>
+<p class="number">1. Summarizing engagement using descriptive statistics</p>
+<p class="number">2. Finding the right Twitter handles (handle names on Twitter are even harder to find than on Wikipedia)</p>
+<p class="number">3. Joining the DataFrame with the rest of the data</p>
+<p class="noindent">First, create a config file config.py and put credentials for the Twitter API inside of it. Then the <code class="calibre11">.import config</code> will create a namespace to use these credentials. Also, Twitter error handling  is imported as well as Pandas and NumPy.</p>
+<p class="codelink"><a id="p120pro01" href="part0035_split_035.html#p120pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">import time<br class="calibre9"/>
+<br class="calibre9"/>
+import twitter<br class="calibre9"/>
+from . import config<br class="calibre9"/>
+import pandas as pd<br class="calibre9"/>
+import numpy as np<br class="calibre9"/>
+from twitter.error import TwitterError</p>
+<p class="noindent">The following code talks to Twitter and grabs 200 tweets and converts them into a Pandas DataFrame. Note how this pattern is used frequently in talking with APIs; the columns are put into a list, then the list of columns is used to create a DataFrame.</p>
+<p class="codelink"><a id="p120pro02" href="part0035_split_036.html#p120pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def api_handler():<br class="calibre9"/>
+    """Creates connection to Twitter API"""<br class="calibre9"/>
+    <br class="calibre9"/>
+    api = twitter.Api(consumer_key=config.CONSUMER_KEY,<br class="calibre9"/>
+    consumer_secret=config.CONSUMER_SECRET,<br class="calibre9"/>
+    access_token_key=config.ACCESS_TOKEN_KEY,<br class="calibre9"/>
+    access_token_secret=config.ACCESS_TOKEN_SECRET)<br class="calibre9"/>
+    return api<br class="calibre9"/>
+<br class="calibre9"/>
+def tweets_by_user(api, user, count=200):<br class="calibre9"/>
+    """Grabs the "n" number of tweets. Defaults to 200"""<br class="calibre9"/>
+<br class="calibre9"/>
+    tweets = api.GetUserTimeline(screen_name=user, count=count)<br class="calibre9"/>
+    return tweets<br class="calibre9"/>
+<br class="calibre9"/>
+def stats_to_df(tweets):<br class="calibre9"/>
+    """Takes twitter stats and converts them to a dataframe"""<br class="calibre9"/>
+<br class="calibre9"/>
+    records = []<br class="calibre9"/>
+    for tweet in tweets:<br class="calibre9"/>
+        records.append({"created_at":tweet.created_at,<br class="calibre9"/>
+            "screen_name":tweet.user.screen_name,<br class="calibre9"/>
+            "retweet_count":tweet.retweet_count,<br class="calibre9"/>
+            "favorite_count":tweet.favorite_count})<br class="calibre9"/>
+    df = pd.DataFrame(data=records)<br class="calibre9"/>
+    return df<br class="calibre9"/>
+<br class="calibre9"/>
+def stats_df(user):<br class="calibre9"/>
+    """Returns a dataframe of stats"""<br class="calibre9"/>
+<br class="calibre9"/>
+    api = api_handler()<br class="calibre9"/>
+    tweets = tweets_by_user(api, user)<br class="calibre9"/>
+    df = stats_to_df(tweets)<br class="calibre9"/>
+    return df</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_121"></span>The last function <code class="calibre11">stats_df</code>, can now be used to interactively explore the results of a Twitter  API call. Here is an example of LeBron James’ descriptive statistics.</p>
+<p class="codelink"><a id="p121pro01" href="part0035_split_037.html#p121pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">df = stats_df(user="KingJames")<br class="calibre9"/>
+In [34]: df.describe()<br class="calibre9"/>
+Out[34]:<br class="calibre9"/>
+       favorite_count  retweet_count<br class="calibre9"/>
+count      200.000000     200.000000<br class="calibre9"/>
+mean     11680.670000    4970.585000<br class="calibre9"/>
+std      20694.982228    9230.301069<br class="calibre9"/>
+min          0.000000      39.000000<br class="calibre9"/>
+25%       1589.500000     419.750000<br class="calibre9"/>
+50%       4659.500000    1157.500000<br class="calibre9"/>
+75%      13217.750000    4881.000000<br class="calibre9"/>
+max     128614.000000   70601.000000<br class="calibre9"/>
+<br class="calibre9"/>
+In [35]: df.corr()<br class="calibre9"/>
+Out[35]:<br class="calibre9"/>
+                favorite_count  retweet_count<br class="calibre9"/>
+favorite_count        1.000000       0.904623<br class="calibre9"/>
+retweet_count         0.904623       1.000000</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_122"></span>In the following code, the Twitter API is called with a slight sleep to avoid running into API throttling. Notice that the Twitter handles are being pulled from a CSV file. Basketball Reference also keeps a large selection of Twitter accounts. Another option would have been to find them manually.</p>
+<p class="codelink"><a id="p122pro01" href="part0035_split_038.html#p122pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def twitter_handles(sleep=.5,data="data/twitter_nba_combined.csv"):<br class="calibre9"/>
+    """yield handles"""<br class="calibre9"/>
+<br class="calibre9"/>
+    nba = pd.read_csv(data)<br class="calibre9"/>
+    for handle in nba["twitter_handle"]:<br class="calibre9"/>
+        time.sleep(sleep) #Avoid throttling in twitter api<br class="calibre9"/>
+        try:<br class="calibre9"/>
+            df = stats_df(handle)<br class="calibre9"/>
+        except TwitterError as error:<br class="calibre9"/>
+            print("Error {handle} and error msg {error}".format(<br class="calibre9"/>
+                handle=handle,error=error))<br class="calibre9"/>
+            df = None<br class="calibre9"/>
+        yield df<br class="calibre9"/>
+<br class="calibre9"/>
+def median_engagement(data="data/twitter_nba_combined.csv"):<br class="calibre9"/>
+    """Median engagement on twitter"""<br class="calibre9"/>
+<br class="calibre9"/>
+    favorite_count = []<br class="calibre9"/>
+    retweet_count = []<br class="calibre9"/>
+    nba = pd.read_csv(data)<br class="calibre9"/>
+    for record in twitter_handles(data=data):<br class="calibre9"/>
+        print(record)<br class="calibre9"/>
+        #None records stored as Nan value<br class="calibre9"/>
+        if record is None:<br class="calibre9"/>
+            print("NO RECORD: {record}".format(record=record))<br class="calibre9"/>
+            favorite_count.append(np.nan)<br class="calibre9"/>
+            retweet_count.append(np.nan)<br class="calibre9"/>
+            continue<br class="calibre9"/>
+        try:<br class="calibre9"/>
+            favorite_count.append(record['favorite_count'].median())<br class="calibre9"/>
+            retweet_count.append(record["retweet_count"].median())<br class="calibre9"/>
+        except KeyError as error:<br class="calibre9"/>
+            print("No values found to append {error}".\<br class="calibre9"/>
+        format(error=error))<br class="calibre9"/>
+            favorite_count.append(np.nan)<br class="calibre9"/>
+            retweet_count.append(np.nan)<br class="calibre9"/>
+        <br class="calibre9"/>
+    print("Creating DF")<br class="calibre9"/>
+    nba['twitter_favorite_count'] = favorite_count<br class="calibre9"/>
+    nba['twitter_retweet_count'] = retweet_count<br class="calibre9"/>
+    return nba</p>
+<p class="noindent">At the end of all of this, a new CSV file is created.</p>
+<p class="codelink"><a id="p122pro02" href="part0035_split_039.html#p122pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def create_twitter_csv(data="data/nba_2016_2017_wikipedia.csv"):<br class="calibre9"/>
+    nba = median_engagement(data)<br class="calibre9"/>
+    nba.to_csv("data/nba_2016_2017_wikipedia_twitter.csv")    </p>
+<h4 id="ch06lev2sub3" class="calibre16"><span epub:type="pagebreak" id="page_123" class="calibre2"></span>Exploring NBA Athlete Data</h4>
+<p class="noindent">To explore the athlete data, a new Jupyter Notebook will be created. This notebook is called <code class="calibre11">nba_player_power_influence_performance</code>. To begin, import a few libraries that are commonly used.</p>
+<p class="codelink"><a id="p123pro01" href="part0035_split_040.html#p123pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [106]: import pandas as pd<br class="calibre9"/>
+     ...: import numpy as np<br class="calibre9"/>
+     ...: import statsmodels.api as sm<br class="calibre9"/>
+     ...: import statsmodels.formula.api as smf<br class="calibre9"/>
+     ...: import matplotlib.pyplot as plt<br class="calibre9"/>
+     ...: import seaborn as sns<br class="calibre9"/>
+     ...: from sklearn.cluster import KMeans<br class="calibre9"/>
+     ...: color = sns.color_palette()<br class="calibre9"/>
+     ...: from IPython.core.display import display, HTML<br class="calibre9"/>
+     ...: display(HTML("&lt;style&gt;.container\<br class="calibre9"/>
+ { width:100% !important; }&lt;/style&gt;"))<br class="calibre9"/>
+     ...: %matplotlib inline<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+&lt;IPython.core.display.HTML object&gt;</p>
+<p class="noindent">Next, load the data files in the project and rename the columns.  </p>
+<p class="codelink"><a id="p123pro02" href="part0035_split_041.html#p123pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [108]: attendance_valuation_elo_df =\<br class="calibre9"/>
+  pd.read_csv("../data/nba_2017_att_val_elo.csv")<br class="calibre9"/>
+In [109]: salary_df = pd.read_csv("../data/nba_2017_salary.csv")<br class="calibre9"/>
+In [110]: pie_df = pd.read_csv("../data/nba_2017_pie.csv")<br class="calibre9"/>
+In [111]: plus_minus_df =\<br class="calibre9"/>
+  pd.read_csv("../data/nba_2017_real_plus_minus.csv")<br class="calibre9"/>
+In [112]: br_stats_df = pd.read_csv("../data/nba_2017_br.csv")<br class="calibre9"/>
+In [113]: plus_minus_df.rename(<br class="calibre9"/>
+        columns={"NAME":"PLAYER", "WINS": "WINS_RPM"}, inplace=True)<br class="calibre9"/>
+     ...: players = []<br class="calibre9"/>
+     ...: for player in plus_minus_df["PLAYER"]:<br class="calibre9"/>
+     ...:     plyr, _ = player.split(",")<br class="calibre9"/>
+     ...:     players.append(plyr)<br class="calibre9"/>
+     ...: plus_minus_df.drop(["PLAYER"], inplace=True, axis=1)<br class="calibre9"/>
+     ...: plus_minus_df["PLAYER"] = players<br class="calibre9"/>
+     ...:</p>
+<p class="noindent">There are some duplicate sources, so these can also be dropped.</p>
+<p class="codelink"><a id="p123pro03" href="part0035_split_042.html#p123pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [114]: nba_players_df = br_stats_df.copy()<br class="calibre9"/>
+     ...: nba_players_df.rename(<br class="calibre9"/>
+        columns={'Player': 'PLAYER','Pos':'POSITION',<br class="calibre9"/>
+        'Tm': "TEAM", 'Age': 'AGE', "PS/G": "POINTS"}, i<br class="calibre9"/>
+     ...: nplace=True)<br class="calibre9"/>
+     ...: nba_players_df.drop(["G", "GS", "TEAM"],<br class="calibre9"/>
+        inplace=True, axis=1)<br class="calibre9"/>
+     ...: nba_players_df =\<br class="calibre9"/>
+ nba_players_df.merge(plus_minus_df, how="inner", on="PLAYER")<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [115]: pie_df_subset = pie_df[["PLAYER", "PIE",<br class="calibre9"/>
+          "PACE", "W"]].copy()<br class="calibre9"/>
+     ...: nba_players_df = nba_players_df.merge(<br class="calibre9"/>
+        pie_df_subset, how="inner", on="PLAYER")<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [116]: salary_df.rename(columns={'NAME': 'PLAYER'}, inplace=True)<br class="calibre9"/>
+     ...: salary_df["SALARY_MILLIONS"] =\<br class="calibre9"/>
+         round(salary_df["SALARY"]/1000000, 2)<br class="calibre9"/>
+     ...: salary_df.drop(["POSITION","TEAM", "SALARY"],<br class="calibre9"/>
+         inplace=True, axis=1)<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [117]: salary_df.head()<br class="calibre9"/>
+Out[117]:<br class="calibre9"/>
+            PLAYER  SALARY_MILLIONS<br class="calibre9"/>
+0     LeBron James            30.96<br class="calibre9"/>
+1      Mike Conley            26.54<br class="calibre9"/>
+2       Al Horford            26.54<br class="calibre9"/>
+3    Dirk Nowitzki            25.00<br class="calibre9"/>
+4  Carmelo Anthony            24.56</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_124"></span>The salary information is missing for 111 NBA players, so these will be players we will drop as well when we do an analysis.</p>
+<p class="codelink"><a id="p124pro01" href="part0035_split_043.html#p124pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [118]: diff = list(set(<br class="calibre9"/>
+        nba_players_df["PLAYER"].values.tolist()) –<br class="calibre9"/>
+set(salary_df["PLAYER"].values.tolist()))<br class="calibre9"/>
+<br class="calibre9"/>
+In [119]: len(diff)<br class="calibre9"/>
+Out[119]: 111<br class="calibre9"/>
+<br class="calibre9"/>
+In [120]: nba_players_with_salary_df =\<br class="calibre9"/>
+ nba_players_df.merge(salary_df);</p>
+<p class="noindent">What’s left is a Pandas DataFrame with 38 columns.</p>
+<p class="codelink"><a id="p124pro02" href="part0035_split_044.html#p124pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [121]: nba_players_with_salary_df.columns<br class="calibre9"/>
+Out[121]:<br class="calibre9"/>
+Index(['Rk', 'PLAYER', 'POSITION', 'AGE', 'MP',<br class="calibre9"/>
+        'FG', 'FGA', 'FG%', '3P',<br class="calibre9"/>
+       '3PA', '3P%', '2P', '2PA', '2P%', 'eFG%',<br class="calibre9"/>
+         'FT', 'FTA', 'FT%', 'ORB',<br class="calibre9"/>
+       'DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV',<br class="calibre9"/>
+         'PF', 'POINTS', 'TEAM', 'GP',<br class="calibre9"/>
+       'MPG', 'ORPM', 'DRPM', 'RPM', 'WINS_RPM',<br class="calibre9"/>
+        'PIE', 'PACE', 'W',<br class="calibre9"/>
+       'SALARY_MILLIONS'],<br class="calibre9"/>
+      dtype='object')<br class="calibre9"/>
+<br class="calibre9"/>
+In [122]: len(nba_players_with_salary_df.columns)<br class="calibre9"/>
+Out[122]: 38</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_125"></span>Next, the DataFrame can be merged with Wikipedia data. The data is collapsed into a median field so it can be represented as one row in a column.</p>
+<p class="codelink"><a id="p125pro01" href="part0035_split_045.html#p125pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [123]: wiki_df = pd.read_csv(<br class="calibre9"/>
+        "../data/nba_2017_player_wikipedia.csv")<br class="calibre9"/>
+In [124]: wiki_df.rename(columns=\<br class="calibre9"/>
+        {'names': 'PLAYER', "pageviews": "PAGEVIEWS"}, inplace=True)<br class="calibre9"/>
+In [125]: median_wiki_df = wiki_df.groupby("PLAYER").median()<br class="calibre9"/>
+In [126]: median_wiki_df_small = median_wiki_df[["PAGEVIEWS"]]<br class="calibre9"/>
+In [127]: median_wiki_df_small.reset_index(<br class="calibre9"/>
+        level=0, inplace=True);median_wiki_df_sm.head()<br class="calibre9"/>
+Out[127]:<br class="calibre9"/>
+           PLAYER  PAGEVIEWS<br class="calibre9"/>
+0    A.J. Hammons         1.0<br class="calibre9"/>
+1    Aaron Brooks        10.0<br class="calibre9"/>
+2    Aaron Gordon       666.0<br class="calibre9"/>
+3    Aaron Harrison     487.0<br class="calibre9"/>
+4    Adreian Payne      166.0<br class="calibre9"/>
+In [128]: nba_players_with_salary_wiki_df =\<br class="calibre9"/>
+ nba_players_with_salary_df.merge(median_wiki_df_small)</p>
+<p class="noindent">The final columns to add are values from the Twitter data.</p>
+<p class="codelink"><a id="p125pro02" href="part0035_split_046.html#p125pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [129]: twitter_df = pd.read_csv(<br class="calibre9"/>
+        "../data/nba_2017_twitter_players.csv")<br class="calibre9"/>
+<br class="calibre9"/>
+In [130]: nba_players_with_salary_wiki_twitter_df=\<br class="calibre9"/>
+        nba_players_with_salary_wiki_df.merge(twitter_df)</p>
+<p class="noindent">There are total of 41 attributes to work with now.</p>
+<p class="codelink"><a id="p125pro03" href="part0035_split_047.html#p125pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [132]: len(nba_players_with_salary_wiki_twitter_df.columns)<br class="calibre9"/>
+Out[132]: 41</p>
+<p class="noindent">A logical next step in exploring the data is to create a correlation heatmap.</p>
+<p class="codelink"><a id="p125pro04" href="part0035_split_048.html#p125pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [133]: plt.subplots(figsize=(20,15))<br class="calibre9"/>
+     ...: ax = plt.axes()<br class="calibre9"/>
+     ...: ax.set_title("NBA Player Correlation Heatmap")<br class="calibre9"/>
+     ...: corr = nba_players_with_salary_wiki_twitter_df.corr()<br class="calibre9"/>
+     ...: sns.heatmap(corr,<br class="calibre9"/>
+     ...:             xticklabels=corr.columns.values,<br class="calibre9"/>
+     ...:             yticklabels=corr.columns.values)<br class="calibre9"/>
+     ...:            <br class="calibre9"/>
+Out[133]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x111e665c0&gt;<br class="calibre9"/>
+&lt;matplotlib.figure.Figure at 0x111e66780&gt;</p>
+<p class="noindent"><a href="part0017.html#ch6fig11" class="calibre7">Figure 6.11</a> shows some fascinating correlations. Twitter engagement and Wikipedia pageviews are highly correlated. Wins attributed to player, or WINS_RPM, is also correlated with Twitter and Wikipedia. Salary and points are highly correlated as well.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_126"></span><a id="ch6fig11" class="calibre7"></a><img src="../images/00036.jpeg" aria-describedby="alt_06fig11" alt="A screenshot displays the N B A Players Correlation Heatmap: 2016–2017." class="calibre8"/>
+<aside class="hidden" id="alt_06fig11" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows the Input, In [41] filed that reads the following: plt.subplots(figsize=(20,15)) ax = plt.axes() ax.set_title(""NBA Player Correlation Heatmap"" 2016-2017 Season (STATS &amp; SALARY &amp; TWITTER &amp; WIKIPEDIA)”) corr = nba_players_with_salary_wiki_twitter_df.corr() sns.heatmap(corr, xticklabels=corr.columns.values, yticklabels=corr.columns.values) The Output, Out [41] field reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x10cebd208&gt;. The heatmap below represents NBA Player Correlation Heatmap: 2016-2017 Season (STATS &amp; SALARY &amp; TWITTER &amp; WIKIPEDIA). The horizontal and the vertical axes reads the following: RK; AGE; MP; FG; FGA; FG (in percentage); 3P; 3PA; 3P (in percentage); 2P; 2PA; 2P (in percentage); EfG (in percentage); FT; FTA, FT (in percentage); ORB; DRB; TRB; AST; STL; BLK; TOV; PF; POINTS; GP; MPG; ORPM; RPM; WINS_RPM; PIE; PACE; W; SALARY_MILLIONS; PAGEVIEWS; TWITTER_FAVORITE_COUNT; and TWITTER_RETWEET_COUNT, respectively. To the right, the heatmap scale is shown. The scale ranges from negative 0.8 to 0.8 in increments of 0.4 (from bottom to top).</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.11</span> NBA Players Correlation Heatmap: 2016–2017</p>
+</div>
+<h3 id="ch06lev3" class="calibre12">Unsupervised Machine Learning on NBA Players</h3>
+<p class="noindent">With a diverse data set and many useful attributes, performing unsupervised ML on NBA players could prove to be very informative. A first step is scale the data and select the attributes against which to cluster (dropping rows with any missing values).</p>
+<p class="codelink"><span epub:type="pagebreak" id="page_127"></span><a id="p127pro01" href="part0035_split_049.html#p127pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [135]: numerical_df =\<br class="calibre9"/>
+ nba_players_with_salary_wiki_twitter_df.loc[:,\<br class="calibre9"/>
+["AGE", "TRB", "AST", "STL", "TOV", "BLK", "PF", "POINTS",\<br class="calibre9"/>
+  "MPG", "WINS_RPM", "W", "SALARY_MILLIONS", "PAGEVIEWS", \<br class="calibre9"/>
+"TWITTER_FAVORITE_COUNT"]].dropna()<br class="calibre9"/>
+In [142]: from sklearn.preprocessing import MinMaxScaler<br class="calibre9"/>
+     ...: scaler = MinMaxScaler()<br class="calibre9"/>
+     ...: print(scaler.fit(numerical_df))<br class="calibre9"/>
+     ...: print(scaler.transform(numerical_df))<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+MinMaxScaler(copy=True, feature_range=(0, 1))<br class="calibre9"/>
+[[  4.28571429e-01   8.35937500e-01   9.27927928e-01 ...,<br class="calibre9"/>
+    2.43447079e-01   1.73521746e-01]<br class="calibre9"/>
+ [  3.80952381e-01   6.32812500e-01   1.00000000e+00 ...,<br class="calibre9"/>
+    1.86527023e-01   7.89216485e-02]<br class="calibre9"/>
+ [  1.90476190e-01   9.21875000e-01   1.80180180e-01 ...,<br class="calibre9"/>
+    4.58206449e-03   2.99723082e-02]<br class="calibre9"/>
+ ...,<br class="calibre9"/>
+ [  9.52380952e-02   8.59375000e-02   2.70270270e-02 ...,<br class="calibre9"/>
+    1.52830350e-02   8.95911386e-04]<br class="calibre9"/>
+ [  2.85714286e-01   8.59375000e-02   3.60360360e-02 ...,<br class="calibre9"/>
+    1.19532117e-03   1.38459032e-03]<br class="calibre9"/>
+ [  1.42857143e-01   1.09375000e-01   1.80180180e-02 ...,<br class="calibre9"/>
+    7.25730711e-03   0.00000000e+00]]</p>
+<p class="noindent">Next, let’s cluster again and write out a CSV file to do faceted plotting in R.</p>
+<p class="codelink"><a id="p127pro02" href="part0035_split_050.html#p127pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [149]: from sklearn.cluster import KMeans<br class="calibre9"/>
+     ...: k_means = KMeans(n_clusters=5)<br class="calibre9"/>
+     ...: kmeans = k_means.fit(scaler.transform(numerical_df))<br class="calibre9"/>
+     ...: nba_players_with_salary_wiki_twitter_df['cluster'] = kmeans.labels_<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+In [150]: nba_players_with_salary_wiki_twitter_df.to_csv(<br class="calibre9"/>
+        "../data/nba_2017_players_social_with_clusters.csv")</p>
+<h4 id="ch06lev3sub1" class="calibre16">Faceting Cluster Plotting in R on NBA Players</h4>
+<p class="noindent">First, import the CSV file and use the ggplot2 library.</p>
+<p class="codelink"><a id="p127pro03" href="part0035_split_051.html#p127pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; player_cluster &lt;- read_csv(<br class="calibre9"/>
++ "nba_2017_players_social_with_clusters.csv",<br class="calibre9"/>
++                          col_types = cols(X1 = col_skip()))<br class="calibre9"/>
+<br class="calibre9"/>
+&gt; library("ggplot2")</p>
+<p class="noindent">Next, give all four clusters meaningful names.</p>
+<p class="codelink"><a id="p127pro04" href="part0035_split_052.html#p127pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; #Name Clusters<br class="calibre9"/>
+&gt; player_cluster$cluster_name[player_cluster$<br class="calibre9"/>
++ cluster == 0] &lt;- "Low Pay/Low"<br class="calibre9"/>
+&gt; player_cluster$cluster_name[player_cluster$<br class="calibre9"/>
++ cluster == 1] &lt;- "High Pay/Above Average Performance"<br class="calibre9"/>
+&gt; player_cluster$cluster_name[player_cluster$<br class="calibre9"/>
++ cluster == 2] &lt;- "Low Pay/Average Performance"<br class="calibre9"/>
+&gt; player_cluster$cluster_name[player_cluster$<br class="calibre9"/>
++ cluster == 3] &lt;- "High Pay/High Performance"<br class="calibre9"/>
+&gt; player_cluster$cluster_name[player_cluster$<br class="calibre9"/>
++ cluster == 4] &lt;- "Medium Pay/Above Average Performance"</p>
+<p class="noindent">Create facets with the cluster names.</p>
+<p class="codelink"><a id="p128pro01" href="part0035_split_053.html#p128pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">&gt; #Create faceted plot<br class="calibre9"/>
+&gt; p &lt;- ggplot(data = player_cluster) +<br class="calibre9"/>
++     geom_point(mapping = aes(x = WINS_RPM,<br class="calibre9"/>
++                              y = POINTS,<br class="calibre9"/>
++                              color = SALARY_MILLIONS,<br class="calibre9"/>
++                              size = PAGEVIEWS))+<br class="calibre9"/>
++     facet_wrap(~ cluster_name) +<br class="calibre9"/>
++     ggtitle("NBA Players Faceted") +<br class="calibre9"/>
++     ylab("POINTS PER GAME") +<br class="calibre9"/>
++     xlab("WINS ATTRIBUTABLE TO PLAYER (WINS_RPM)") +<br class="calibre9"/>
++     geom_text(aes(x = WINS_RPM, y = POINTS,</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_128"></span>There is a bit of work to figure plot text in each facet, and this is accomplished by R and/or statements below. There is also the use of three colors in the salary, which allows for a much clearer view of the differences.</p>
+<p class="codelink"><a id="p128pro02" href="part0035_split_054.html#p128pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">label=ifelse(<br class="calibre9"/>
++ PAGEVIEWS&gt;10000|TOV&gt;5|AGE&gt;37|WINS_RPM&gt;15|cluster<br class="calibre9"/>
++ == 2 &amp; WINS_RPM &gt; 3,<br class="calibre9"/>
++                                                          <br class="calibre9"/>
+as.character(PLAYER),'')),hjust=.8, check_overlap = FALSE)    <br class="calibre9"/>
+&gt;<br class="calibre9"/>
+&gt; #Change legends<br class="calibre9"/>
+&gt; p +<br class="calibre9"/>
++     guides(color = guide_legend(title = "Salary Millions")) +<br class="calibre9"/>
++     guides(size = guide_legend(<br class="calibre9"/>
++ title = "Wikipedia Daily Pageviews" ))+<br class="calibre9"/>
++     scale_color_gradientn(colours = rainbow(3))<br class="calibre9"/>
+&gt;     geom_text(aes(x = ELO, y = VALUE_MILLIONS, label=ifelse(<br class="calibre9"/>
+VALUE_MILLIONS&gt;1200,as.character(TEAM),'')),hjust=.35,vjust=1)</p>
+<p class="noindent">The final result is a nifty, faceted plot as shown in <a href="part0017.html#ch6fig12" class="calibre7">Figure 6.12</a>. The main labels that have been discovered are the differences between popularity, salary, and performance. The cluster with LeBron James and Russell Westbrook has the “best of the best,” but they also command the highest salaries.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_129"></span><a id="ch6fig12" class="calibre7"></a><img src="../images/00037.jpeg" aria-describedby="alt_06fig12" alt="A screenshot displays the ggplot Faceted Plot NBA Players: 2016–2017 with kNN." class="calibre8"/>
+<aside class="hidden" id="alt_06fig12" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows five ggplot faceted plot graphs that represent High Pay or Above Average Performance; High Pay or High Performance; Low Pay or Average Performance; Low Pay or Low Performance; and Medium Pay or Above Average Performance. The horizontal axis of the graphs represents WINS ATTRIBUTABLE TO PLAYER (WINS_RPM) ranging from 0 to 20, in increments of 5 and the vertical axis of the graphs represents POINTS PER GAME ranging from 0 to 30, in increments of 10. The legend on the left represents two sections: Wikipedia Daily Pageviews that shows three circles in increasing size from top bottom reads: 5000, 10000, and 15000, respectively. The second section, Salary Millions shows three dots of different shaded that reads: 10, 20, and 30.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.12</span> ggplot Faceted Plot NBA Players: 2016–2017 with kNN</p>
+</div>
+<h4 id="ch06lev3sub2" class="calibre16">Putting it All Together: Teams, Players, Power, and Endorsements</h4>
+<p class="noindent">With all the data collected, there are some interesting new plots to test out. By combining the endorsement, team, and player data, it is possible to make a couple of fascinating plots. First, the endorsement data can be shown in a correlation heatmap in <a href="part0017.html#ch6fig13" class="calibre7">Figure 6.13</a>. You can see the “copper” color adds an interesting twist to this plot.</p>
+<p class="codelink"><a id="p129pro01" href="part0035_split_055.html#p129pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [150]: nba_players_with_salary_wiki_twitter_df.to_csv(<br class="calibre9"/>
+"../data/nba_2017_players_social_with_clusters.csv")<br class="calibre9"/>
+<br class="calibre9"/>
+In [151]: endorsements = pd.read_csv(<br class="calibre9"/>
+"../data/nba_2017_endorsement_full_stats.csv")<br class="calibre9"/>
+<br class="calibre9"/>
+In [152]: plt.subplots(figsize=(20,15))<br class="calibre9"/>
+     ...: ax = plt.axes()<br class="calibre9"/>
+     ...: ax.set_title("NBA Player Endorsement, \<br class="calibre9"/>
+Social Power, On-Court Performance, \<br class="calibre9"/>
+Team Valuation Correlation Heatmap:  2016-2017<br class="calibre9"/>
+     ...: Season")<br class="calibre9"/>
+     ...: corr = endorsements.corr()<br class="calibre9"/>
+     ...: sns.heatmap(corr,<br class="calibre9"/>
+     ...:             xticklabels=corr.columns.values,<br class="calibre9"/>
+     ...:             yticklabels=corr.columns.values, cmap="copper")<br class="calibre9"/>
+     ...:            <br class="calibre9"/>
+Out[152]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x1124d90b8&gt;<br class="calibre9"/>
+&lt;matplotlib.figure.Figure at 0x1124d9908&gt;</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_130"></span><a id="ch6fig13" class="calibre7"></a><img src="../images/00038.jpeg" aria-describedby="alt_06fig13" alt="A screenshot displays the Endorsements Correlation Heatmap." class="calibre8"/>
+<aside class="hidden" id="alt_06fig13" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows the Input, In [215] field that reads the following: sns.heatmap(corr, xticklabels=corr.columns.values, yticklabels=corr.columns.values, cmap=""copper""). The Output, Out [215] reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x1124d90b8&gt;. The heatmap below represents NBA Player Endorsement, Social Power, On-Court Performance, Team Valuation Correlation Heatmap: 2016-2017 Season. The horizontal and the vertical axes reads: SALARY_MILLIONS; ENDORSEMENT_MILLIONS; PCT_ATTENDANCE_STADIUM; ATTENDANCE_TOTAL_BY_100000; FRANCHISE_VALUE_100_MILLION; ELO_100X; AGE; MP; GP; MGP; WINS_RPM; PLAYERS_TEAM_WINS; WIKIPEDIA_PAGEVIEWS_100000; and TWITTER_FAVORITE_COUNT_1000, respectively. To the right, the heatmap scale is shown. The scale ranges from negative 0.6 to 0.9 in increments of 0.3 (from bottom to top).</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.13</span> Endorsements Correlation Heatmap</p>
+</div>
+<p class="noindent">Next, in an accent plot, the totality of the work is showcased in <a href="part0017.html#ch6fig14" class="calibre7">Figure 6.14</a>. The code for that is</p>
+<p class="codelink"><a id="p130pro01" href="part0035_split_056.html#p130pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [153]: from matplotlib.colors import LogNorm<br class="calibre9"/>
+     ...: plt.subplots(figsize=(20,15))<br class="calibre9"/>
+     ...: pd.set_option('display.float_format', lambda x: '%.3f' % x)<br class="calibre9"/>
+     ...: norm = LogNorm()<br class="calibre9"/>
+     ...: ax = plt.axes()<br class="calibre9"/>
+     ...: grid = endorsements.select_dtypes([np.number])<br class="calibre9"/>
+     ...: ax.set_title("NBA Player Endorsement,\<br class="calibre9"/>
+ Social Power, On-Court Performance,\<br class="calibre9"/>
+ Team Valuation Heatmap:  2016-2017 Season")<br class="calibre9"/>
+     ...: sns.heatmap(grid,annot=True,<br class="calibre9"/>
+ yticklabels=endorsements["PLAYER"],fmt='g',<br class="calibre9"/>
+ cmap="Accent", cbar=False, norm=norm)<br class="calibre9"/>
+     ...:<br class="calibre9"/>
+Out[153]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x114902cc0&gt;<br class="calibre9"/>
+&lt;matplotlib.figure.Figure at 0x114902048&gt;</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_131"></span><a id="ch6fig14" class="calibre7"></a><img src="../images/00039.jpeg" aria-describedby="alt_06fig14" alt="A screenshot displays the Endorsements for Players, Accent Plot represented by Heatmap." class="calibre8"/>
+<aside class="hidden" id="alt_06fig14" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The map represents the NBA Player Endorsement, Social Power, On-Court Performance, Team Valuation Correlation Heatmap: 2016-2017 Season. The horizontal axis reads: SALARY_MILLIONS; ENDORSEMENT_MILLIONS; PCT_ATTENDANCE_STADIUM; ATTENDANCE_TOTAL_BY_100000; FRANCHISE_VALUE_100_MILLION; ELO_100X; AGE; MP; GP; MGP; WINS_RPM; PLAYERS_TEAM_WINS; WIKIPEDIA_PAGEVIEWS_100000; and TWITTER_FAVORITE_COUNT_1000. The vertical axis reads the players name as follows: LeBron James, Kevin Durant, James Harden, Russell Westbrook, Carmelo Antony; Dwyane Wade, Chris Paul, Derrick Rose; Kyrie Irving, and Stephen Curry. The heatmap shows the values marked on each shade.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 6.14</span> Endorsements for Players, Accent Plot</p>
+</div>
+<p class="noindent">Note that a huge part of making the accent plot readable is converting the colors to LogNorm. This allows relative changes to be the catalyst for boundaries between cells.</p>
+<h3 id="ch06lev4" class="calibre12">Further Pragmatic Steps and Learnings</h3>
+<p class="noindent">One of the key reasons for this book to exist is to show how to create complete working solutions deployable to production. One way to get this solution out of a notebook would be to explore some of the solutions in other chapters that go over techniques to get projects shipped into production, for example, creating an NBA Team Valuation prediction API, or an API that showed the social power of NBA superstars. A Y combinator (YC) pitch deck might be just a few more lines of code away.</p>
+<p class="noindent">In addition to that, a Kaggle notebook can be forked (<a href="https://www.kaggle.com/noahgift/social-power-nba" class="calibre7">https://www.kaggle.com/noahgift/social-power-nba</a>), and that could be starting point for even more exploration. Finally, a video and slides on this topic can be found on the Strata Data Conference 2018 San Jose schedule: <a href="https://conferences.oreilly.com/strata/strata-ca/public/schedule/detail/63606" class="calibre7">https://conferences.oreilly.com/strata/strata-ca/public/schedule/detail/63606</a>.</p>
+<h3 id="ch06lev5" class="calibre12"><span epub:type="pagebreak" id="page_132" class="calibre2"></span>Summary</h3>
+<p class="noindent">This chapter looked at a real-world ML problem, starting with questions and then moving into techniques on how to collect data from all over the internet. Many of the smaller data sets were cut and pasted from web sites that may or may not have been friendly to their collection. The larger data sources Wikipedia and Twitter required a different approach—a more software engineering–centric approach.</p>
+<p class="noindent">Next, the data was explored in both a statistical fashion and using unsupervised ML and data visualization. In the final section, several solutions were created using cloud providers, including a scalable API, a serverless application, and a data visualization framework (Shiny).</p>
+</body></html>

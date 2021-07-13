@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>B Deciding on Cluster Size</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="appendixb"><span epub:type="pagebreak" id="page_219" class="calibre2"></span>B</h2>
+<h2 class="h2a">Deciding on Cluster Size</h2>
+<p class="noindent">There are many examples of k-means clustering in this book. One of the most commonly asked questions about these is how many clusters should be made. There is no correct answer because clustering is the process of creating labels, and two domain experts may use their judgments differently.</p>
+<p class="noindent">In <a href="part0024.html#b1fig" class="calibre7">Figure B.1</a>, I created a cluster of the 2013−2014 NBA season stats, and I labeled the eight clusters by descriptions I thought were useful. Another NBA expert may have created fewer or more clusters.</p>
+<div class="figure" id="b1fig">
+<div class="image"><img src="../images/00063.jpeg" aria-describedby="alt_b1fig" alt="A screenshot of an N B A Season Clustering is shown." class="calibre8"/>
+<aside class="hidden" id="alt_b1fig" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows 8 graphs from top to bottom that represents Block Role, Limited, Role, Very Good, Role, Elite Handle, Elite Big, and Best. The horizontal axis of the graphs represents points ranging from 0 to 300 in increments of 1000 and the vertical axis represents rebounds ranging from 0 to 900 in increments of 300. The Block Role shows the cluster ranging from 100 to 1500 on the horizontal axis 300 to 900 on the vertical axis representing 0 to 200 assists and 50 to 150 blocks. The Limited shows the cluster ranging from 0 to 400 on the horizontal axis and 0 to 200 on the vertical axis representing 0 to 200 assists and 0 to 40 blocks. The Role shows the cluster ranging from 0 to 800 on the horizontal axis and 0 to 350 on the vertical axis representing 0 to 200 assists and 0 to 50 blocks. The graph representing very good shows the cluster ranging from 400 to 1700 on the horizontal axis and 0 to 600 on the vertical axis representing 200 to 600 assists and 0 to 50 blocks. The Role shows the cluster ranging from 200 to 1000 on the horizontal axis and 0 to 350 on the vertical axis representing 0 to 200 assists and 0 to 50 blocks. The Elite Handle shows the clusters ranging from 1000 to 2000 on the horizontal axis and 100 to 600 on the vertical axis representing 400 to 600 assists and 0 to 50 blocks. The Elite Big shows the cluster ranging from 500 to 1600 on the horizontal axis and 350 to above 950 on the vertical axis representing 0 to 400 assists and 50 to 150 blocks. The best shows the cluster ranging from 1600 to 2800 on the horizontal axis and 300 to 950 on the vertical axis representing 50 to 100 assists and 200 to 400 blocks. The legend on the right represents two sections: assists and blocks. The assists show different sizes of dots ranging from 0 to 600 in increments of 0 to 600 (from top to bottom). The blocks show the different shades of colors ranging from 0 to 200 (from bottom to top).</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure B.1</span> NBA Season Clustering</p>
+</div>
+<p class="noindent">However, there are some ways to help with deciding how many clusters to create. The scikit- learn documentation has some good examples of how to evaluate clustering performance (<a href="http://scikit-learn.org/stable/modules/clustering.html#clustering-performance-evaluation" class="calibre7">http://scikit-learn.org/stable/modules/clustering.html#clustering-performance-evaluation</a>). Two popular techniques discussed are elbow plots and silhouette plots. This would be the recommended starting point at which to dig deeper if the clustering assignments seem like they could be improved.<span epub:type="pagebreak" id="page_220"></span></p>
+</body></html>

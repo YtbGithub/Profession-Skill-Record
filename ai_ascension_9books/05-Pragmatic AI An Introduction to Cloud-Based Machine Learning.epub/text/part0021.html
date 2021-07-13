@@ -1,0 +1,310 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>10 Real Estate</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="ch10"><span epub:type="pagebreak" id="page_183" class="calibre2"></span>10</h2>
+<h2 class="h2a">Real Estate</h2>
+<p class="blockquote"><em class="calibre5">Once you get on the playing field, it’s not about whether you’re liked or not liked. All that matters is to play at a high level and do whatever it takes to help your team win. That’s what it’s about.</em></p>
+<p class="attribution">LeBron James</p>
+<p class="noindent">Do you know of any good data sets to explore? This is one of the most asked questions I get as a lecturer or when teaching a workshop. One of my go-to answers is the Zillow real estate data sets: <a href="https://www.zillow.com/research/data/" class="calibre7">https://www.zillow.com/research/data/</a>. The real estate market in the United States is something that every person living in the country has to deal with, and as a result it makes for a great topic of conversation about ML.</p>
+<h3 id="ch10lev1" class="calibre12">Exploring Real Estate Values in the United States</h3>
+<p class="noindent">Living in the San Francisco Bay Area makes someone think often and long about housing prices. There is a good reason for that. The median homes prices in the Bay Area are accelerating at shocking rates. From 2010 to 2017, the median price of a single-family home in San Francisco has gone from approximately $775,000 to $1.5 million. This data will be explored with a Jupyter Notebook. The entire project, and its data, can be checked out at <a href="https://github.com/noahgift/real_estate_ml" class="calibre7">https://github.com/noahgift/real_estate_ml</a>.</p>
+<p class="noindent">At the beginning of the notebook, several libraries are imported and Pandas is set to display float versus scientific notation.</p>
+<p class="codelink"><a id="p183pro01" href="part0039_split_000.html#p183pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [1]: import pandas as pd<br class="calibre9"/>
+   ...: pd.set_option('display.float_format', lambda x: '%.3f' % x)<br class="calibre9"/>
+   ...: import numpy as np<br class="calibre9"/>
+   ...: import statsmodels.api as sm<br class="calibre9"/>
+   ...: import statsmodels.formula.api as smf<br class="calibre9"/>
+   ...: import matplotlib.pyplot as plt<br class="calibre9"/>
+   ...: import seaborn as sns<br class="calibre9"/>
+<br class="calibre9"/>
+Double import seaborn?<br class="calibre9"/>
+<br class="calibre9"/>
+   ...: import seaborn as sns; sns.set(color_codes=True)<br class="calibre9"/>
+   ...: from sklearn.cluster import KMeans<br class="calibre9"/>
+   ...: color = sns.color_palette()<br class="calibre9"/>
+   ...: from IPython.core.display import display, HTML<br class="calibre9"/>
+   ...: display(HTML("&lt;style&gt;.container \<br class="calibre9"/>
+{ width:100% !important; }&lt;/style&gt;"))<br class="calibre9"/>
+   ...: %matplotlib inline</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_184"></span>Next, data from Zillow for single-family homes (<a href="https://www.zillow.com/research/data/" class="calibre7">https://www.zillow.com/research/data/</a>) is imported and described.</p>
+<p class="codelink"><a id="p184pro01" href="part0039_split_001.html#p184pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [6]: df.head()<br class="calibre9"/>
+In [7]: df.describe()<br class="calibre9"/>
+Out[7]:<br class="calibre9"/>
+        RegionID  RegionName  SizeRank     1996-04     1996-05<br class="calibre9"/>
+count  15282.000   15282.000 15282.000   10843.000   10974.000<br class="calibre9"/>
+mean   80125.483   46295.286  7641.500  123036.189  122971.396<br class="calibre9"/>
+std    30816.445   28934.030  4411.678   78308.265   77822.431<br class="calibre9"/>
+min    58196.000    1001.000     1.000   24400.000   23900.000<br class="calibre9"/>
+25%    66785.250   21087.750  3821.250   75700.000   75900.000<br class="calibre9"/>
+50%    77175.000   44306.500  7641.500  104300.000  104450.000<br class="calibre9"/>
+75%    88700.500   70399.500 11461.750  147100.000  147200.000<br class="calibre9"/>
+max   738092.000   99901.000 15282.000 1769000.000 1768100.000</p>
+<p class="noindent">Next, cleanup is done to rename a column and format the column type.</p>
+<p class="codelink"><a id="p184pro01a" href="part0039_split_002.html#p184pro01aa" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [8]: df.rename(columns={"RegionName":"ZipCode"}, inplace=True)<br class="calibre9"/>
+   ...: df["ZipCode"]=df["ZipCode"].map(lambda x: "{:.0f}".format(x))<br class="calibre9"/>
+   ...: df["RegionID"]=df["RegionID"].map(<br class="calibre9"/>
+                 lambda x: "{:.0f}".format(x))<br class="calibre9"/>
+   ...: df.head()<br class="calibre9"/>
+   ...:<br class="calibre9"/>
+Out[8]:<br class="calibre9"/>
+RegionID ZipCode City    State  Metro CountyName  SizeRank<br class="calibre9"/>
+84654   60657   Chicago    IL   Chicago       Cook     1.000<br class="calibre9"/>
+84616   60614   Chicago    IL   Chicago       Cook     2.000<br class="calibre9"/>
+93144   79936   El Paso    TX   El Paso    El Paso     3.000<br class="calibre9"/>
+84640   60640   Chicago    IL   Chicago       Cook     4.000<br class="calibre9"/>
+61807   10467  New York    NY  New York      Bronx     5.000</p>
+<p class="noindent">Getting the median values for all of the United States will be helpful for many different types of analysis in this notebook. In the following example, multiple values that match the region or city are aggregated and median calculations are created for them. A new DataFrame is created called <code class="calibre11">df_comparison</code> that will be used with the Plotly library.</p>
+<p class="codelink"><a id="p184pro02" href="part0039_split_003.html#p184pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [9]: median_prices = df.median()<br class="calibre9"/>
+<br class="calibre9"/>
+In [10]: median_prices.tail()<br class="calibre9"/>
+Out[10]:<br class="calibre9"/>
+2017-05   180600.000<br class="calibre9"/>
+2017-06   181300.000<br class="calibre9"/>
+2017-07   182000.000<br class="calibre9"/>
+2017-08   182500.000<br class="calibre9"/>
+2017-09   183100.000<br class="calibre9"/>
+dtype: float64<br class="calibre9"/>
+<br class="calibre9"/>
+In [11]: marin_df = df[df["CountyName"] == "Marin"].median()<br class="calibre9"/>
+    ...: sf_df = df[df["City"] == "San Francisco"].median()<br class="calibre9"/>
+    ...: palo_alto = df[df["City"] == "Palo Alto"].median()<br class="calibre9"/>
+    ...: df_comparison = pd.concat([marin_df, sf_df,<br class="calibre9"/>
+                 palo_alto, median_prices], axis=1)<br class="calibre9"/>
+    ...: df_comparison.columns = ["Marin County",<br class="calibre9"/>
+                 "San Francisco", "Palo Alto", "Median USA"]<br class="calibre9"/>
+    ...:</p>
+<h3 id="ch10lev2" class="calibre12"><span epub:type="pagebreak" id="page_185" class="calibre2"></span>Interactive Data Visualization in Python</h3>
+<p class="noindent">There are a couple of commonly used interactive data visualization libraries in Python: Plotly (<a href="https://github.com/plotly/plotly.py" class="calibre7">https://github.com/plotly/plotly.py</a>) and Bokeh (<a href="https://bokeh.pydata.org/en/latest/" class="calibre7">https://bokeh.pydata.org/en/latest/</a>). In this chapter, Plotly will be used for data visualization, but Bokeh could also have done similar plots. Plotly is a commercial company that can be used in both offline mode and by exporting to the company web site. Plotly also has an open-source Python framework called Dash (<a href="https://plot.ly/products/dash/" class="calibre7">https://plot.ly/products/dash/</a>) that can be used for building analytical web applications. Many of the plots in this chapter can be found at <a href="https://plot.ly/~ngift" class="calibre7">https://plot.ly/~ngift</a>.</p>
+<p class="noindent">In this example, a library called <em class="calibre5">Cufflinks</em> (<a href="https://plot.ly/ipython-notebooks/cufflinks/" class="calibre7">https://plot.ly/ipython-notebooks/cufflinks/</a>) is used to make it trivial to plot directly from a Pandas DataFrame to Plotly. Cufflinks is described as a “productivity tool” for Pandas. One of the major strengths of the library is the capability to plot as an almost native feature of Pandas.</p>
+<p class="codelink"><a id="p185pro01" href="part0039_split_004.html#p185pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [12]: import cufflinks as cf<br class="calibre9"/>
+    ...: cf.go_offline()<br class="calibre9"/>
+    ...: df_comparison.iplot(title="Bay Area Median\<br class="calibre9"/>
+Single Family Home Prices 1996-2017",<br class="calibre9"/>
+    ...:                     xTitle="Year",<br class="calibre9"/>
+    ...:                     yTitle="Sales Price",<br class="calibre9"/>
+    ...:                    #bestfit=True, bestfit_colors=["pink"],<br class="calibre9"/>
+    ...:                    #subplots=True,<br class="calibre9"/>
+    ...:                    shape=(4,1),<br class="calibre9"/>
+    ...:                     #subplot_titles=True,<br class="calibre9"/>
+    ...:                     fill=True,)<br class="calibre9"/>
+    ...:                    </p>
+<p class="noindent"><span epub:type="pagebreak" id="page_186"></span><a href="part0021.html#ch10fig1" class="calibre7">Figure 10.1</a> shows a view of the plot without interactions turned on. Palo Alto looks like a truly scary place to be entering the housing market as a buyer.</p>
+<p class="noindent">In <a href="part0021.html#ch10fig2" class="calibre7">Figure 10.2</a>, the mouse is hovering over December 2009, and it shows a point near the bottom of the last housing crash, with the median housing price in Palo Alto at $1.2 million, the median in San Francisco around $750,000, and the median in the entire United States at $170,000.</p>
+<div class="figure">
+<div class="image"><a id="ch10fig1" class="calibre7"></a><img src="../images/00053.jpeg" aria-describedby="alt_10fig01" alt="A line graph represents region median home price to national median home price ratio from 1996 to 2017." class="calibre8"/>
+<aside class="hidden" id="alt_10fig01" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents Years ranging from 1995 to 2015, in increments of 5 with September 2017 indicated at right. The vertical axis represents Sales Price from 0 to 16, in increments of 2. A curve representing Cleveland ratio median starts just above 0 and moves constantly. In September 2017, the ratio ends at 0.4320044. Another curve representing Marin County ratio median starts between 2 and 4, increases gradually, and ends at 6.380666 in September 2017. Another curve representing San Francisco ratio median starts between 2 and 4, increases gradually, and ends at 8.058438 in September 2017. Another curve representing Palo Alto ratio median starts just above 4, increases rapidly, and ends at 14.69416 in September 2017.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.1</span> Can Palo Alto Grow Exponentially Forever?</p>
+</div>
+<div class="figure">
+<div class="image"><a id="ch10fig2" class="calibre7"></a><img src="../images/00054.jpeg" aria-describedby="alt_10fig02" alt="A line graph represents bay area median single family home prices from 1996 to 2017." class="calibre8"/>
+<aside class="hidden" id="alt_10fig02" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents Years ranging from 2000 to 2015, in increments of 5 and the vertical axis represents Sales Price ranging from 0 to 2.5 million, in increments of 0.5 million. A curve representing Median U S A starts just above 0 and moves almost constant. The price is indicated as 163.4k in December 2009. Another curve representing San Francisco starts between 0 and 0.5 million, increases gradually, and ends above 1 million with the price indicated as 765.1k in December 2009. Another curve representing Marin County starts between 0 and 0.5 million, increases gradually, and ends close to 1.5 million with the price indicated as 777.5 k in December 2009. Another curve representing Palo Alto starts just below 0.5 million, increases rapidly, and ends above 2.5 million with the price indicated as 1.2 million in December 2009.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.2</span> Housing Market Bottom in December 2009</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_187"></span>By scrolling through the graph, it can be shown that in December 2017, the price in Palo  Alto was about $2.7 million, more than double in 8 years. On the other hand, the median home price in rest of the United States has only appreciated about 5 percent. This is definitely worth exploring more.</p>
+<h3 id="ch10lev3" class="calibre12">Clustering on Size Rank and Price</h3>
+<p class="noindent">To further explore what is going on, a k-means cluster 3D visualization can be created with both sklearn and Plotly. First, the data is scaled using the MinMaxScaler so outliers don’t skew the results of the clustering.</p>
+<p class="codelink"><a id="p187pro01" href="part0039_split_005.html#p187pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [13]: from sklearn.preprocessing import MinMaxScaler<br class="calibre9"/>
+<br class="calibre9"/>
+In [14]: columns_to_drop = ['RegionID', 'ZipCode',<br class="calibre9"/>
+         'City', 'State', 'Metro', 'CountyName']<br class="calibre9"/>
+    ...: df_numerical = df.dropna()<br class="calibre9"/>
+    ...: df_numerical = df_numerical.drop(columns_to_drop, axis=1)<br class="calibre9"/>
+    ...:</p>
+<p class="noindent">Next, a quick description is done.</p>
+<p class="codelink"><a id="p187pro02" href="part0039_split_006.html#p187pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [15]: df_numerical.describe()<br class="calibre9"/>
+Out[15]:<br class="calibre9"/>
+       SizeRank     1996-04     1996-05     1996-06     1996-07<br class="calibre9"/>
+count 10015.000   10015.000   10015.000   10015.000   10015.000<br class="calibre9"/>
+mean   6901.275  124233.839  124346.890  124445.791  124517.993<br class="calibre9"/>
+std    4300.338   78083.175   77917.627   77830.951   77776.606<br class="calibre9"/>
+min       1.000   24500.000   24500.000   24800.000   24800.000<br class="calibre9"/>
+25%    3166.500   77200.000   77300.000   77300.000   77300.000<br class="calibre9"/>
+50%    6578.000  105700.000  106100.000  106400.000  106400.000<br class="calibre9"/>
+75%   10462.000  148000.000  148200.000  148500.000  148700.000<br class="calibre9"/>
+max   15281.000 1769000.000 1768100.000 1766900.000 1764200.000</p>
+<p class="noindent">When the cluster is performed after dropping missing values, there are about 10,000 rows.</p>
+<p class="codelink"><a id="p187pro03" href="part0039_split_007.html#p187pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [16]: scaler = MinMaxScaler()<br class="calibre9"/>
+    ...: scaled_df = scaler.fit_transform(df_numerical)<br class="calibre9"/>
+    ...: kmeans = KMeans(n_clusters=3, random_state=0).fit(scaled_df)<br class="calibre9"/>
+    ...: print(len(kmeans.labels_))<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+10015</p>
+<p class="noindent">An appreciation ratio column is added, and the data is cleaned up before visualization.</p>
+<p class="codelink"><a id="p187pro04" href="part0039_split_008.html#p187pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">cluster_df = df.copy(deep=True)<br class="calibre9"/>
+cluster_df.dropna(inplace=True)<br class="calibre9"/>
+cluster_df.describe()<br class="calibre9"/>
+cluster_df['cluster'] = kmeans.labels_<br class="calibre9"/>
+cluster_df['appreciation_ratio'] =\<br class="calibre9"/>
+         round(cluster_df["2017-09"]/cluster_df["1996-04"],2)<br class="calibre9"/>
+cluster_df['CityZipCodeAppRatio'] =\<br class="calibre9"/>
+ cluster_df['City'].map(str) + "-" + cluster_df['ZipCode'] + "-" +<br class="calibre9"/>
+cluster_df["appreciation_ratio"].map(str)<br class="calibre9"/>
+cluster_df.head()</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_188"></span>Next, Plotly is used in offline mode (i.e., it doesn’t get sent to the Plotly servers), and three  axes are graphed: <em class="calibre5">x</em> is the appreciation ratio, <em class="calibre5">y</em> is the year 1996, and <em class="calibre5">z</em> is the year 2017. The clusters are shaded. In <a href="part0021.html#ch10fig3" class="calibre7">Figure 10.3</a>, some patterns stick out instantly. Jersey City has appreciated the most in the last 30 years, going from a low of $142,000 to a high of $1.344 million, a 9✗ increase.</p>
+<p class="noindent">Some other visible things are a couple of zip codes in Palo Alto. They have also increased about 6 times in value, which is even more amazing considering how expensive the houses were to begin with. In the last 10 years, the rise of startups in Palo Alto, including Facebook, have caused a distorted elevation of pricing, even factoring in the entire Bay Area.</p>
+<div class="figure">
+<div class="image"><a id="ch10fig3" class="calibre7"></a><img src="../images/00055.jpeg" aria-describedby="alt_10fig03" alt="A scatterplot shows the real estate prices in the United States for the past 30 years with the clusters shaded." class="calibre8"/>
+<aside class="hidden" id="alt_10fig03" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal X-axis represents Appreciation Ratio ranging from 0 to 8, in increments of 2. The right vertical Y-axis represents 1996 Prices with 0.5 million and 1 million indicated from bottom to top. The left vertical Z-axis represents 2017 Prices ranging from 0 to 5 million in increments of 1 million. The plots in dark gray are at the bottom with most of the plots below 0.5 million at ratios below 5. The plots in black lie between 0.5 million and 1.5 million at ratios below 6. The plots in light gray are at the top with most of the plots above 1.5 million and below 4 million at ratios below 7. The coordinates of an outlier, Jersey City (7302-9.39), are indicated as x: 9.39, y: 143.2k, and z: 1.3442 million.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.3</span> What the Heck Is Going on With Jersey City Appreciation?</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_189"></span>Another interesting visualization would be the appreciation ratio of these same columns to see whether this trend in Palo Alto can be observed further. The code looks similar to the code for <a href="part0021.html#ch10fig3" class="calibre7">Figure 10.3</a>.</p>
+<p class="codelink"><a id="p189pro01" href="part0039_split_009.html#p189pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [17]: from sklearn.neighbors import KNeighborsRegressor<br class="calibre9"/>
+    ...: neigh = KNeighborsRegressor(n_neighbors=2)<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [19]: #df_comparison.columns = ["Marin County",<br class="calibre9"/>
+         "San Francisco", "Palo Alto", "Median USA"]<br class="calibre9"/>
+    ...: cleveland = df[df["City"] == "Cleveland"].median()<br class="calibre9"/>
+    ...: df_median_compare = pd.DataFrame()<br class="calibre9"/>
+    ...: df_median_compare["Cleveland_ratio_median"] =\<br class="calibre9"/>
+                 cleveland/df_comparison["Median USA"]<br class="calibre9"/>
+    ...: df_median_compare["San_Francisco_ratio_median"] =\<br class="calibre9"/>
+                 df_comparison["San Francisco"]/df_comparison["Median USA"]<br class="calibre9"/>
+    ...: df_median_compare["Palo_Alto_ratio_median"] =\<br class="calibre9"/>
+                 df_comparison["Palo Alto"]/df_comparison["Median USA"]<br class="calibre9"/>
+    ...: df_median_compare["Marin_County_ratio_median"] =\<br class="calibre9"/>
+                 df_comparison["Marin County"]/df_comparison["Median USA"]<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [20]: import cufflinks as cf<br class="calibre9"/>
+    ...: cf.go_offline()<br class="calibre9"/>
+    ...: df_median_compare.iplot(title="Region Median Home Price to National Median<br class="calibre9"/>Home Price Ratio 1996-2017",<br class="calibre9"/>
+    ...:                     xTitle="Year",<br class="calibre9"/>
+    ...:                     yTitle="Ratio to National Median",<br class="calibre9"/>
+    ...:                    #bestfit=True, bestfit_colors=["pink"],<br class="calibre9"/>
+    ...:                    #subplots=True,<br class="calibre9"/>
+    ...:                    shape=(4,1),<br class="calibre9"/>
+    ...:                     #subplot_titles=True,<br class="calibre9"/>
+    ...:                     fill=True,)<br class="calibre9"/>
+    ...:</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_190"></span>In <a href="part0021.html#ch10fig4" class="calibre7">Figure 10.4</a>, the median appreciation of Palo Alto looks exponential since the housing crash of 2008, yet the rest of the San Francisco Bay Area seems to have be less volatile. A reasonable hypothesis may be that there is a bubble inside the Bay Area, in Palo Alto, that may not be sustainable. Eventually, exponential growth comes to an end.</p>
+<p class="noindent">One more thing to look at would be to look at the rent index and see if there are further patterns to tease out.</p>
+<div class="figure">
+<div class="image"><a id="ch10fig4" class="calibre7"></a><img src="../images/00056.jpeg" aria-describedby="alt_10fig04" alt="A line graph represents region median home price to national median home price ratio from 1996 to 2017." class="calibre8"/>
+<aside class="hidden" id="alt_10fig04" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents Years ranging from 1995 to 2015, in increments of 5 with September 2017 indicated at right. The vertical axis represents Ratio to National Median ranging from 0 to 16, in increments of 2. A curve representing Cleveland ratio median starts just above 0, moves constant, and ends at 0.4320044 in September 2017. Another curve representing Marin County ratio median starts between 2 and 4, increases gradually, and ends at 6.380666 in September 2017. Another curve representing San Francisco ratio median starts between 2 and 4, increases gradually, and ends at 8.058438 in September 2017. Another curve representing Palo Alto ratio median starts just above 4, increases rapidly, and ends at 14.69416 in September 2017. After 2008, the ratio to national median of Palo Alto increased exponentially with that of the other cities being less volatile.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.4</span> Palo Alto Went From Having Home Prices 5 Times Higher Than National Median to 15 Times Higher in About 10 Years</p>
+</div>
+<p class="noindent">The initial data import is cleaned up and the Metro column is renamed to be a City column.</p>
+<p class="codelink"><a id="p190pro01" href="part0039_split_010.html#p190pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [21]: df_rent = pd.read_csv(<br class="calibre9"/>
+         "../data/City_MedianRentalPrice_Sfr.csv")<br class="calibre9"/>
+    ...: df_rent.head()<br class="calibre9"/>
+    ...: median_prices_rent = df_rent.median()<br class="calibre9"/>
+    ...: df_rent[df_rent["CountyName"] == "Marin"].median()<br class="calibre9"/>
+    ...: df_rent.columns<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[21]:<br class="calibre9"/>
+Index(['RegionName', 'State', 'Metro',<br class="calibre9"/>
+        'CountyName', 'SizeRank', '2010-01',<br class="calibre9"/>
+<br class="calibre9"/>
+In [22]: df_rent.rename(columns={"Metro":"City"}, inplace=True)<br class="calibre9"/>
+    ...: df_rent.head()<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[22]:<br class="calibre9"/>
+     RegionName State                            City    CountyName<br class="calibre9"/>
+0      New York    NY                        New York        Queens<br class="calibre9"/>
+1   Los Angeles    CA  Los Angeles-Long Beach-Anaheim   Los Angeles<br class="calibre9"/>
+2       Chicago    IL                         Chicago          Cook<br class="calibre9"/>
+3       Houston    TX                         Houston        Harris<br class="calibre9"/>
+4  Philadelphia    PA                    Philadelphia  Philadelphia</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_191"></span>Next, the medians are created in a new DataFrame.</p>
+<p class="codelink"><a id="p191pro01" href="part0039_split_011.html#p191pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [23]: median_prices_rent = df_rent.median()<br class="calibre9"/>
+    ...: marin_df = df_rent[df_rent["CountyName"] ==\<br class="calibre9"/>
+                  "Marin"].median()<br class="calibre9"/>
+    ...: sf_df = df_rent[df_rent["City"] == "San Francisco"].median()<br class="calibre9"/>
+    ...: cleveland = df_rent[df_rent["City"] == "Cleveland"].median()<br class="calibre9"/>
+    ...: palo_alto = df_rent[df_rent["City"] == "Palo Alto"].median()<br class="calibre9"/>
+    ...: df_comparison_rent = pd.concat([marin_df,<br class="calibre9"/>
+         sf_df, palo_alto, cleveland, median_prices_rent], axis=1)<br class="calibre9"/>
+    ...: df_comparison_rent.columns = ["Marin County",<br class="calibre9"/>
+ "San Francisco", "Palo Alto", "Cleveland", "Median USA"]<br class="calibre9"/>
+    ...:</p>
+<p class="noindent">Finally, Cufflinks is used again to plot the median rents.</p>
+<p class="codelink"><a id="p191pro02" href="part0039_split_012.html#p191pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [24]: import cufflinks as cf<br class="calibre9"/>
+    ...: cf.go_offline()<br class="calibre9"/>
+    ...: df_comparison_rent.iplot(<br class="calibre9"/>
+        title="Median Monthly Rents Single Family Homes",<br class="calibre9"/>
+    ...:                     xTitle="Year",<br class="calibre9"/>
+    ...:                     yTitle="Monthly",<br class="calibre9"/>
+    ...:                    #bestfit=True, bestfit_colors=["pink"],<br class="calibre9"/>
+    ...:                    #subplots=True,<br class="calibre9"/>
+    ...:                    shape=(4,1),<br class="calibre9"/>
+    ...:                     #subplot_titles=True,<br class="calibre9"/>
+    ...:                     fill=True,)<br class="calibre9"/>
+    ...:                    </p>
+<p class="noindent">In <a href="part0021.html#ch10fig5" class="calibre7">Figure 10.5</a>, the trends look much less dramatic, partially because the data is spread over a shorter period of time, but this isn’t the whole picture. Although Palo Alto isn’t in this data set, the other cities in the San Francisco Bay Area look much closer to the median rents, whereas Cleveland, Ohio, appears to be about half of the median rent in the United States.</p>
+<div class="figure">
+<div class="image"><span epub:type="pagebreak" id="page_192"></span><a id="ch10fig5" class="calibre7"></a><img src="../images/00057.jpeg" aria-describedby="alt_10fig05" alt="A line graph represents median rents of three cities and that of the United States from 2010 to 2017." class="calibre8"/>
+<aside class="hidden" id="alt_10fig05" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents years from 2010 to 2017, in increments of 1 and the vertical axis represents median rent from 0 to 4000, in increments of 500. A curve representing Cleveland starts between 500 and 1000 from 2011, moves almost constant, and ends at 925 in October 2017. Another curve representing Median U S A starts from 1000 in 2010, moves almost constant, and ends at 1528.75 in October 2017. Another curve representing San Francisco starts from 2000 in 2011, increases rapidly, and ends at 3100 in October 2017. Another curve representing Marin County starts just below 3000 between 2013 and 2014, increases gradually, and ends at 3573.75 in October 2017.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.5</span> Rents in the San Francisco Bay Area since 2011 Have Almost Doubled While the Rest of the US Has Stayed Flat</p>
+</div>
+<p class="noindent">One final analysis would be to look a similar rent ratio across the United States. In this code, the rent ratio is created with a new empty DataFrame and then inserted into Plotly again.</p>
+<p class="codelink"><a id="p192pro01" href="part0039_split_013.html#p192pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [25]: df_median_rents_ratio = pd.DataFrame()<br class="calibre9"/>
+    ...: df_median_rents_ratio["Cleveland_ratio_median"] =\<br class="calibre9"/>
+         df_comparison_rent["Cleveland"]/df_comparison_rent["Median USA"]<br class="calibre9"/>
+    ...: df_median_rents_ratio["San_Francisco_ratio_median"] =\<br class="calibre9"/>
+         df_comparison_rent["San Francisco"]/df_comparison_rent["Median USA"]<br class="calibre9"/>
+    ...: df_median_rents_ratio["Palo_Alto_ratio_median"] =\<br class="calibre9"/>
+         df_comparison_rent["Palo Alto"]/df_comparison_rent["Median USA"]<br class="calibre9"/>
+    ...: df_median_rents_ratio["Marin_County_ratio_median"] =\<br class="calibre9"/>
+         df_comparison_rent["Marin County"]/df_comparison_rent["Median USA"]<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [26]: import cufflinks as cf<br class="calibre9"/>
+    ...: cf.go_offline()<br class="calibre9"/>
+    ...: df_median_rents_ratio.iplot(title="Median Monthly Rents Ratios Single Family<br class="calibre9"/>         Homes vs National Median",<br class="calibre9"/>
+    ...:                     xTitle="Year",<br class="calibre9"/>
+    ...:                     yTitle="Rent vs Median Rent USA",<br class="calibre9"/>
+    ...:                    #bestfit=True, bestfit_colors=["pink"],<br class="calibre9"/>
+    ...:                    #subplots=True,<br class="calibre9"/>
+    ...:                    shape=(4,1),<br class="calibre9"/>
+    ...:                     #subplot_titles=True,<br class="calibre9"/>
+    ...:                     fill=True,)<br class="calibre9"/>
+    ...:  </p>
+<p class="noindent"><span epub:type="pagebreak" id="page_193"></span><a href="part0021.html#ch10fig6" class="calibre7">Figure 10.6</a> shows a different story from the appreciation ratio. In San Francisco, the median rent is still double the median of the rest of the United States, but nowhere near the 8✗ increase of the median home price. In looking at the rental data, it may pay to double-check before buying a home in 2018, especially in the Palo Alto area. Renting, even though it is high, may be a much better deal.</p>
+<div class="figure">
+<div class="image"><a id="ch10fig6" class="calibre7"></a><img src="../images/00058.jpeg" aria-describedby="alt_10fig06" alt="A line graph represents region median rent to national median rent ratio from 2010 to 2017." class="calibre8"/>
+<aside class="hidden" id="alt_10fig06" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents years ranging from 2010 to 2017, in increments of 1 and the vertical axis represents rent ratio ranging from 0 to 2.5, in increments of 0.5. A curve representing Cleveland starts just above 0.5 in 2011, moves almost constant, and ends at 0.6050695 in October 2017. Another curve representing San Francisco starts just above 1.5 in 2011, increases rapidly, and ends at 2.0278 in October 2017. Another curve representing Marin County starts just above 2 between 2013 and 2014, increases gradually, and ends at 2.337694 in October 2017.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 10.6</span> Monthly Rents in the San Francisco Bay Area Versus National Median Have Exploded</p>
+</div>
+<h3 id="ch10lev4" class="calibre12"><span epub:type="pagebreak" id="page_194" class="calibre2"></span>Summary</h3>
+<p class="noindent">In this chapter, a data exploration was performed on a public Zillow data set. The Plotly library was used to create interactive data visualizations in Python. k-means clustering and 3D visualization were used to tease out more information from a relatively simple data set. The findings included the idea that there may have been a housing bubble in the San Francisco Bay Area, specifically Palo Alto, in 2017. It may pay to do further exploration on this data set by creating a classification model of when to sell and when to buy for each region of the United States.</p>
+<p class="noindent">Other future directions to take this sample project is to look at higher-level APIs like ones that House Canary (<a href="https://api-docs.housecanary.com/#getting-started" class="calibre7">https://api-docs.housecanary.com/#getting-started</a>) provides. It may be that your organization can build an AI application by using their prediction models as a base, and then layering other AI and ML techniques on top. Another direction might be to use AWS SageMaker to create a deep learning prediction and then to deploy a model internally into your organization that is used to make business decisions.</p>
+</body></html>

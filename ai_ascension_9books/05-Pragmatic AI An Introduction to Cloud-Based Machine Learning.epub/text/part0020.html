@@ -1,0 +1,507 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>9 Dynamically Optimizing EC2 Instances on AWS</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="ch09"><span epub:type="pagebreak" id="page_167" class="calibre2"></span>9</h2>
+<h2 class="h2a">Dynamically Optimizing EC2 Instances on AWS</h2>
+<p class="blockquote"><em class="calibre5">Jiu-Jitsu is a race, and if you make a mistake against someone  better than you, you will never catch up [paraphrase].</em></p>
+<p class="attribution">Luis “Limao” Heredia (5-Time Pan American Brazilian Jiu-Jitsu Champion)</p>
+<p class="noindent">A common problem with production ML is needing to manage jobs. Examples could be as diverse as scraping the contents of a web site to generating descriptive statistics on a large CSV file to programmatically updating a supervised ML model. Managing jobs is one of the most complex problems in computer science, and there are many ways to do it. In addition, running jobs can get very expensive very quickly. In this section, several different AWS technologies will be covered, and examples will be given for each.</p>
+<h3 id="ch09lev1" class="calibre12">Running Jobs on AWS</h3>
+<h4 id="ch09lev1sub1" class="calibre16">Spot Instances</h4>
+<p class="noindent">Having a strong understanding of Spot instances is essential for both production machine learning systems and for experimentation. Going through the official spot tutorial video at AWS (<a href="https://aws.amazon.com/ec2/spot/spot-tutorials/" class="calibre7">https://aws.amazon.com/ec2/spot/spot-tutorials/</a>) is useful and may help with some of the content covered. Here is a little background on spot instances.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">Typically, between 50 to 60 percent cheaper than reserved instances</p></li>
+<li class="calibre14"><p class="bullet">Useful in many industries and use cases</p>
+<ul class="calibre25">
+<li class="calibre14"><p class="bullet">Scientific research</p></li>
+<li class="calibre14"><p class="bullet">Financial services</p></li>
+<li class="calibre14"><p class="bullet">Video/imaging-processing companies</p></li>
+<li class="calibre14"><p class="bullet">Web crawling/data processing</p></li>
+<li class="calibre14"><p class="bullet"><span epub:type="pagebreak" id="page_168"></span>Functional testing and load testing</p></li>
+<li class="calibre14"><p class="bullet">Deep learning and machine learning</p></li>
+</ul></li>
+<li class="calibre14"><p class="bullet">There are four common architectures.</p>
+<ul class="calibre25">
+<li class="calibre14"><p class="bullet">Hadoop/Elastic Map Reduce (EMR)</p></li>
+<li class="calibre14"><p class="bullet">Check pointing (writing out results as they are processed out to disk)</p></li>
+<li class="calibre14"><p class="bullet">Grid (e.g., StarCluster, <a href="http://star.mit.edu/cluster/docs/latest/index.html" class="calibre7">http://star.mit.edu/cluster/docs/latest/index.html</a>)</p></li>
+<li class="calibre14"><p class="bullet">Queue-based</p></li>
+</ul></li>
+</ul>
+<h5 class="calibre17">Spot Instances Theory and Pricing History</h5>
+<p class="noindent">There is a bit of a learning curve in understanding how to reason about spot pricing. Some of the obstacles at the beginning are understanding what type of instance your jobs actually need. Even this is fraught with difficulty because, depending on the type of Spot architecture, there will be different bottlenecks: network in some, disk I/O or CPU in others. Additionally, to the jobs framework, the way the code is architected is itself an issue.</p>
+<p class="noindent"><em class="calibre5">Amdahl’s law</em> is best described as shown in <a href="part0020.html#ch9fig1" class="calibre7">Figure 9.1</a>, which shows the limits of real-world parallelization. It states that speedup is limited by serial parts of the program. For example, the overhead in distributing the job may contain serial components. Perhaps the best example is to consider a job that takes 100 seconds, yet contains 5 seconds of a <code class="calibre11">time.sleep()</code> that a developer forgot about. When a job like this gets distributed, the theoretical maximum speedup would be 20 times. In the case of hidden sleep (it does happen), even a faster CPU or disk won’t do anything to improve the performance of that hidden sleep.</p>
+<div class="figure">
+<div class="image"><a id="ch9fig1" class="calibre7"></a><img src="../images/00048.jpeg" aria-describedby="alt_09fig01" alt="A graph represents Ahmdehl’s Law Diminishing Returns." class="calibre8"/>
+<aside class="hidden" id="alt_09fig01" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents Speedup ranging from 1 to 19, in increments of 1 and the vertical axis represents Processors ranging from 1 to 10000, in multiples of 10. Four parallel shades of different thicknesses are from bottom to top representing Speedup 50 percent Parallel, Speedup 75 percent Parallel, Speedup 90 percent Parallel, and Speedup 95 percent Parallel. The shade representing Speedup 50 percent Parallel starts from the origin and moves horizontally just above 1 of the vertical axis. The next shade representing Speedup 75 percent Parallel moves horizontally at the middle of 1 and 10 of the vertical axis. The next shade representing Speedup 90 percent Parallel moves horizontally just above 10 of the vertical axis. The parallel shade at the top representing Speedup 95 percent Parallel moves horizontally between 10 and 100 of the vertical axis. Another shade is above the parallel shades that starts below 10 of the vertical axis and increases constantly up to a level above 10000 of the vertical axis.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 9.1</span> Amdahl’s Law</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_169"></span>In <a href="part0020.html#ch09equ1" class="calibre7">Equation 9.1</a>, the following are described:</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">S<sub class="calibre26">latency</sub> (s) is the total speedup.</p></li>
+<li class="calibre14"><p class="bullet">s is the speedup of the parallel portion.</p></li>
+<li class="calibre14"><p class="bullet">p is the proportion of execution time that the part benefiting from improved resources originally used.</p></li>
+</ul>
+<p class="ex-caption" id="ch09equ1"><span class="calibre3">Equation 9.1</span><strong class="calibre3"> Amdahl’s Law Equation</strong></p>
+<hr class="calibre15"/>
+<p class="image2"><img src="../images/00049.jpeg" alt="An equation reads, S subscript latency (s) equals 1 over (1 minus p) plus p over s." class="calibre8"/></p>
+<p class="noindent">If the serial component of the job is uncompressing something, then a faster CPU and higher disk I/O may help. Ultimately, theory aside, distributed jobs are hard, and the best way to figure out what types of Spot instances and architectures to use requires experimentation and instrumentation. Run a job, look at the metrics of the individual nodes, and consider the time it took to execute. Then experiment with different architectures and configurations, like EFS versus striped Elastic Block Storage (EBS) volumes shared out via Network File System (NFS).</p>
+<p class="noindent">I spent many years working in the film industry, and there is an argument to be made that film is the first “Big Data” industry. Film has been running distributed jobs frameworks for many more years before Hadoop, Big Data, ML, and AI were being discussed in jobs frameworks. Some things I discovered in film that are applicable to Big Data are that things always go wrong in distributed systems. Having incredible discipline about keeping jobs as simple as possible, while maintaining incredible instrumentation, is a key takeaway.</p>
+<p class="noindent">Coming full circle back to the topic of Spot pricing, it pays to know there are many ways to optimize the performance of distributed jobs. At first, the low-hanging fruit may be to just find cheap, high-powered instances, but thinking about other configurations and how to test them is critical for long-term success in developing jobs that work at the production level.</p>
+<p class="noindent">A great resource for comparing Spot prices with on-demand prices and looking at machine capabilities is at <a href="http://www.ec2instances.info/" class="calibre7">http://www.ec2instances.info/</a>. The source code is also available in GitHub (<a href="https://github.com/powdahound/ec2instances.info" class="calibre7">https://github.com/powdahound/ec2instances.info</a>). The authors scrape the AWS site, then compare Spot prices with reserved prices in one handy web page. This data was formatted and  put into a CSV file for easy import into Jupyter Notebook.</p>
+<h5 class="calibre17">Creating an ML-Based Spot Instances Pricing Tool and Notebook</h5>
+<p class="noindent">Creating ML solutions that make it into production is a major focus of this book. The Unix philosophy embraces the concept of small tools that do one thing well. With production systems, it is often about not just the system, but the small tools developed along the way that enable the system to work. In the spirit of that philosophy, we’ll demonstrate a tool that finds Spot pricing in a region and also uses ML to recommend choices in the same cluster. To start, a new Jupyter Notebook is initialized with common boilerplate.</p>
+<p class="codelink"><a id="p170pro01" href="part0038_split_000.html#p170pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre"><span epub:type="pagebreak" id="page_170"></span>In [1]: import pandas as pd<br class="calibre9"/>
+   ...: import seaborn as sns<br class="calibre9"/>
+   ...: import matplotlib.pyplot as plt<br class="calibre9"/>
+   ...: from sklearn.cluster import KMeans<br class="calibre9"/>
+   ...: %matplotlib inline<br class="calibre9"/>
+   ...: from IPython.core.display import display, HTML<br class="calibre9"/>
+   ...: display(HTML("&lt;style&gt;.container \<br class="calibre9"/>
+{ width:100% !important; }&lt;/style&gt;"))<br class="calibre9"/>
+   ...: import boto3</p>
+<p class="noindent">Next, an initial CSV file is loaded with some information grabbed from <a href="http://www.ec2instances.info/" class="calibre7">http://www.ec2instances.info/</a>, and formatted slightly first in Excel.</p>
+<p class="codelink"><a id="p170pro02" href="part0038_split_001.html#p170pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [2]: pricing_df = pd.read_csv("../data/ec2-prices.csv")<br class="calibre9"/>
+   ...: pricing_df['price_per_ecu_on_demand'] =\<br class="calibre9"/>
+        pricing_df['linux_on_demand_cost_hourly']/\<br class="calibre9"/>
+        pricing_df['compute_units_ecu']<br class="calibre9"/>
+   ...: pricing_df.head()<br class="calibre9"/>
+   ...:<br class="calibre9"/>
+Out[2]:<br class="calibre9"/>
+                Name InstanceType  memory_gb  compute_units_ecu  \<br class="calibre9"/>
+R3 High-Memory Large     r3.large      15.25                6.5<br class="calibre9"/>
+M4 Large     m4.large       8.00                            6.5  <br class="calibre9"/>
+R4 High-Memory Large     r4.large      15.25                7.0<br class="calibre9"/>
+C4 High-CPU Large     c4.large       3.75                   8.0  <br class="calibre9"/>
+GPU Extra Large    p2.xlarge      61.00                    12.0<br class="calibre9"/>
+<br class="calibre9"/>
+vcpu  gpus  fpga enhanced_networking  linux_on_demand_cost_hourly \<br class="calibre9"/>
+2     0     0                 Yes                         0.17  <br class="calibre9"/>
+2     0     0                 Yes                         0.10  <br class="calibre9"/>
+2     0     0                 Yes                         0.13  <br class="calibre9"/>
+2     0     0                 Yes                         0.10  <br class="calibre9"/>
+4     1     0                 Yes                         0.90  <br class="calibre9"/>
+<br class="calibre9"/>
+   price_per_ecu_on_demand  <br class="calibre9"/>
+0                 0.026154  <br class="calibre9"/>
+1                 0.015385  <br class="calibre9"/>
+2                 0.018571  <br class="calibre9"/>
+3                 0.012500  <br class="calibre9"/>
+4                 0.075000  <br class="calibre9"/>
+</p>
+<p class="noindent">The instance names from this data set are passed into the Boto API to grab Spot instance pricing history.</p>
+<p class="codelink"><a id="p170pro03" href="part0038_split_002.html#p170pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [3]: names = pricing_df["InstanceType"].to_dict()<br class="calibre9"/>
+In [6]: client = boto3.client('ec2')<br class="calibre9"/>
+   ...: response =client.describe_spot_price_history(\<br class="calibre9"/>
+InstanceTypes = list(names.values()),<br class="calibre9"/>
+   ...:         ProductDescriptions = ["Linux/UNIX"])<br class="calibre9"/>
+In [7]: spot_price_history = response['SpotPriceHistory']<br class="calibre9"/>
+   ...: spot_history_df = pd.DataFrame(spot_price_history)<br class="calibre9"/>
+   ...: spot_history_df.SpotPrice =\<br class="calibre9"/>
+ spot_history_df.SpotPrice.astype(float)<br class="calibre9"/>
+   ...:</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_171"></span>The information that comes back from the API that is the most useful is the <em class="calibre5">SpotPrice</em> value, which can be used as the basis for both recommending similar instances and finding the best price per Elastic Compute Unit (ECU) and memory. Also, the results, which come back as JSON, are imported into a Pandas DataFrame. The SpotPrice column is then converted to a float to allow for later numerical manipulation.</p>
+<p class="codelink"><a id="p171pro01" href="part0038_split_003.html#p171pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [8]: spot_history_df.head()<br class="calibre9"/>
+Out[8]:<br class="calibre9"/>
+  AvailabilityZone InstanceType ProductDescription  SpotPrice  \<br class="calibre9"/>
+0       us-west-2c   r4.8xlarge         Linux/UNIX     0.9000  <br class="calibre9"/>
+1       us-west-2c    p2.xlarge         Linux/UNIX     0.2763  <br class="calibre9"/>
+2       us-west-2c   m3.2xlarge         Linux/UNIX     0.0948  <br class="calibre9"/>
+3       us-west-2c    c4.xlarge         Linux/UNIX     0.0573  <br class="calibre9"/>
+4       us-west-2a    m3.xlarge         Linux/UNIX     0.0447  <br class="calibre9"/>
+<br class="calibre9"/>
+                  Timestamp  <br class="calibre9"/>
+0 2017-09-11 15:22:59+00:00  <br class="calibre9"/>
+1 2017-09-11 15:22:39+00:00  <br class="calibre9"/>
+2 2017-09-11 15:22:39+00:00  <br class="calibre9"/>
+3 2017-09-11 15:22:38+00:00  <br class="calibre9"/>
+4 2017-09-11 15:22:38+00:00  </p>
+<p class="noindent">Two DataFrames are merged, and new columns are created that are the SpotPrice over the memory and ECU (compute units). A describe operation in Pandas over three of the columns shows the characteristics of the newly created DataFrame.</p>
+<p class="codelink"><a id="p171pro02" href="part0038_split_004.html#p171pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [16]: df = spot_history_df.merge(\<br class="calibre9"/>
+pricing_df, how="inner", on="InstanceType")<br class="calibre9"/>
+    ...: df['price_memory_spot'] =\<br class="calibre9"/>
+ df['SpotPrice']/df['memory_gb']<br class="calibre9"/>
+    ...: df['price_ecu_spot'] =\<br class="calibre9"/>
+ df['SpotPrice']/df['compute_units_ecu']<br class="calibre9"/>
+    ...: df[["price_ecu_spot", "SpotPrice",\<br class="calibre9"/>
+ "price_memory_spot"]].describe()<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+Out[16]:<br class="calibre9"/>
+       price_ecu_spot    SpotPrice  price_memory_spot<br class="calibre9"/>
+count     1000.000000  1000.000000        1000.000000<br class="calibre9"/>
+mean         0.007443     0.693629           0.005041<br class="calibre9"/>
+std          0.029698     6.369657           0.006676<br class="calibre9"/>
+min          0.002259     0.009300           0.000683<br class="calibre9"/>
+25%          0.003471     0.097900           0.002690<br class="calibre9"/>
+50%          0.004250     0.243800           0.003230<br class="calibre9"/>
+75%          0.006440     0.556300           0.006264<br class="calibre9"/>
+max          0.765957   133.380000           0.147541</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_172"></span>Visualizing the data will make things more clear. Doing a groupby operation by AWS <code class="calibre11">InstanceType</code> allows for a median to be performed for each <code class="calibre11">InstanceType</code>.</p>
+<p class="codelink"><a id="p172pro01" href="part0038_split_005.html#p172pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [17]: df_median = df.groupby("InstanceType").median()<br class="calibre9"/>
+    ...: df_median["InstanceType"] = df_median.index<br class="calibre9"/>
+    ...: df_median["price_ecu_spot"] =\<br class="calibre9"/>
+ df_median.price_ecu_spot.round(3)<br class="calibre9"/>
+    ...: df_median["divide_SpotPrice"] = df_median.SpotPrice/100<br class="calibre9"/>
+    ...: df_median.sort_values("price_ecu_spot", inplace=True)</p>
+<p class="noindent">A <em class="calibre5">Seaborn</em> bar plot is created that overlays two plots on top of each other. This is an excellent technique to show the contrast of two related columns. The price_ecu_spot, the ratio of spot price versus compute units compares against the raw SpotPrice. This is shown in <a href="part0020.html#ch9fig2" class="calibre7">Figure 9.2</a>, and the sorted DataFrame allows a clear pattern to emerge; there are some great values for thrifty distributed computing users. In this particular region, us-west-2, the r4.large style instances are the best deal if only ECU is considered and both the Spot price and the Spot price, ECU ratio is considered. One trick to improve visibility was to divide the SpotPrice by 100.</p>
+<p class="codelink"><a id="p172pro02" href="part0038_split_006.html#p172pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">    ...: plt.subplots(figsize=(20,15))<br class="calibre9"/>
+    ...: ax = plt.axes()<br class="calibre9"/>
+    ...: sns.set_color_codes("muted")<br class="calibre9"/>
+    ...: sns.barplot(x="price_ecu_spot",\<br class="calibre9"/>
+ y="InstanceType", data=df_median,<br class="calibre9"/>
+    ...:             label="Spot Price Per ECU", color="b")<br class="calibre9"/>
+    ...: sns.set_color_codes("pastel")<br class="calibre9"/>
+    ...: sns.barplot(x="divide_SpotPrice",\<br class="calibre9"/>
+ y="InstanceType", data=df_median,<br class="calibre9"/>
+    ...:             label="Spot Price/100", color="b")<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+    ...: # Add a legend and informative axis label<br class="calibre9"/>
+    ...: ax.legend(ncol=2, loc="lower right", frameon=True)<br class="calibre9"/>
+    ...: ax.set(xlim=(0, .1), ylabel="",<br class="calibre9"/>
+    ...:        xlabel="AWS Spot Pricing by Compute Units (ECU)")<br class="calibre9"/>
+    ...: sns.despine(left=True, bottom=True)<br class="calibre9"/>
+    ...:        <br class="calibre9"/>
+&lt;matplotlib.figure.Figure at 0x11383ef98&gt;</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_173"></span><a id="ch9fig2" class="calibre7"></a><img src="../images/00050.jpeg" aria-describedby="alt_09fig02" alt="A figure depicts the horizontal subdivided bars for style instances from top to bottom." class="calibre8"/>
+<aside class="hidden" id="alt_09fig02" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">Each of the bars is divided into two with the left part representing spot price per E C U and the right part representing spot price per 100. The horizontal axis at the bottom represents price ranging from 0.00 to 0.10 in increments of 0.02. The subdivided bars are shown for r4.large, c3.2xlarge, m3.xlarge, m3.medium, r4.xlarge, m4.4xlarge, r4.2xlarge, c4.large, r4.4xlarge, c3.4xlarge, c3.8xlarge, c4.xlarge, m3.2xlarge, c3.large, c3.xlarge, m4.large, c4.8xlarge, m4.16xlarge, r3.xlarge, c4.2xlarge, m4.10xlarge, r4.8xlarge, c4.4xlarge, cc2.8xlarge, m4.2xlarge, r3.4xlarge, m4.xlarge, r3.8xlarge, x1.32xlarge, r4.16xlarge, i2.4xlarge, r3.2xlarge, g3.8xlarge, g3.4xlarge, d2.xlarge, i2.8xlarge, f1.2xlarge, d2.8xlarge, d2.2xlarge, d2.xlarge, i2.xlarge, i2.2xlarge, hi1.large, p2.8xlarge, and p2.xlarge from top to bottom. For c4.8xlarge, m4.16xlarge, m4.10xlarge, r3.8xlarge, x1.32xlarge, r4.16xlarge, i2.8xlarge, and d2.8xlarge, only spot price per E C U is shown.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 9.2</span> AWS Spot Pricing by Compute Units</p>
+</div>
+<p class="noindent">There is enough information here that it makes sense to turn this into a command-line tool that will be useful in making decisions about what type of Spot instances to provision. To create a new command-line tool, a new module is created in the paws directory, and the previous code is wrapped up into functions.</p>
+<p class="codelink"><a id="p174pro01" href="part0038_split_007.html#p174pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre"><span epub:type="pagebreak" id="page_174"></span>def cluster(combined_spot_history_df, sort_by="price_ecu_spot"):<br class="calibre9"/>
+    """Clusters Spot Instances"""<br class="calibre9"/>
+<br class="calibre9"/>
+    df_median = combined_spot_history_df.\<br class="calibre9"/>
+groupby("InstanceType").median()<br class="calibre9"/>
+    df_median["InstanceType"] = df_median.index<br class="calibre9"/>
+    df_median["price_ecu_spot"] = df_median.price_ecu_spot.round(3)<br class="calibre9"/>
+    df_median.sort_values(sort_by, inplace=True)<br class="calibre9"/>
+    numerical_df = df_median.loc[:,\<br class="calibre9"/>
+["price_ecu_spot", "price_memory_spot", "SpotPrice"]]<br class="calibre9"/>
+    scaler = MinMaxScaler()<br class="calibre9"/>
+    scaler.fit(numerical_df)<br class="calibre9"/>
+    scaler.transform(numerical_df)<br class="calibre9"/>
+    k_means = KMeans(n_clusters=3)<br class="calibre9"/>
+    kmeans = k_means.fit(scaler.transform(numerical_df))<br class="calibre9"/>
+    df_median["cluster"]=kmeans.labels_<br class="calibre9"/>
+    return df_median<br class="calibre9"/>
+<br class="calibre9"/>
+def recommend_cluster(df_cluster, instance_type):<br class="calibre9"/>
+    """Takes a instance_type and finds<br class="calibre9"/>
+a recommendation of other instances similar"""<br class="calibre9"/>
+<br class="calibre9"/>
+<br class="calibre9"/>
+    vals = df_cluster.loc[df_cluster['InstanceType'] ==\<br class="calibre9"/>
+ instance_type]<br class="calibre9"/>
+    cluster_res = vals['cluster'].to_dict()<br class="calibre9"/>
+    cluster_num = cluster_res[instance_type]<br class="calibre9"/>
+    cluster_members = df_cluster.loc[df_cluster["cluster"] ==\<br class="calibre9"/>
+ cluster_num]<br class="calibre9"/>
+    return cluster_members</p>
+<p class="noindent">There is a cluster function, which scales the data and takes the price_ecu_spot, price_memory_spot, and SpotPrice and makes three clusters. The recommend cluster function works under the assumption that instances in the same cluster are a likely substitute. A brief peak at the data, in Jupyter, shows there do appear to be three distinct clusters. Cluster 1 has an almost ridiculous amount of memory and a corresponding high SpotPrice; there is only 1 member in this cluster. Cluster 2 has the lowest memory, and 11 instances in it. Cluster 1 has the most members at 33 and is marginally more expensive, but has double the memory on average. These assumptions can now be turned into a useful command-line tool that allows a user to pick whether she wants low, medium, or high memory Spot instances, and shows her how much she would pay.</p>
+<p class="codelink"><a id="p175pro01" href="part0038_split_008.html#p175pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [25]: df_median[["price_ecu_spot", "SpotPrice",\<br class="calibre9"/>
+  "price_memory_spot", "memory_gb","cluster"]].\<br class="calibre9"/>
+groupby("cluster").median()<br class="calibre9"/>
+Out[25]:<br class="calibre9"/>
+         price_ecu_spot  SpotPrice  price_memory_spot  memory_gb<br class="calibre9"/>
+cluster                                                        <br class="calibre9"/>
+0                 0.005     0.2430           0.002817       61.0<br class="calibre9"/>
+1                 0.766    72.0000           0.147541      488.0<br class="calibre9"/>
+2                 0.004     0.1741           0.007147       30.0<br class="calibre9"/>
+<br class="calibre9"/>
+In [27]: df_median[["price_ecu_spot", "SpotPrice",\<br class="calibre9"/>
+  "price_memory_spot", "memory_gb","cluster"]].\<br class="calibre9"/>
+groupby("cluster").count()<br class="calibre9"/>
+Out[27]:<br class="calibre9"/>
+         price_ecu_spot  SpotPrice  price_memory_spot  memory_gb<br class="calibre9"/>
+cluster                                                        <br class="calibre9"/>
+0                    33         33                 33         33<br class="calibre9"/>
+1                     1          1                  1          1<br class="calibre9"/>
+2                    11         11                 11         11</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_175"></span>The last step to create the command-line tool is to use the same pattern shown in the chapter: import the library, use the click framework to manage options, and use click.echo to give back the results. The recommend command takes a <code class="calibre11">–instance </code>flag, which then returns results for all members of that cluster.</p>
+<p class="codelink"><a id="p175pro02" href="part0038_split_009.html#p175pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">@cli.command("recommend")<br class="calibre9"/>
+@click.option('--instance', help='Instance Type')<br class="calibre9"/>
+def recommend(instance):<br class="calibre9"/>
+    """Recommends similar spot instances uses kNN clustering<br class="calibre9"/>
+<br class="calibre9"/>
+    Example usage:<br class="calibre9"/>
+<br class="calibre9"/>
+    ./spot-price-ml.py recommend --instance c3.8xlarge<br class="calibre9"/>
+<br class="calibre9"/>
+    """<br class="calibre9"/>
+    pd.set_option('display.float_format', lambda x: '%.3f' % x)<br class="calibre9"/>
+    pricing_df = setup_spot_data("data/ec2-prices.csv")<br class="calibre9"/>
+    names = pricing_df["InstanceType"].to_dict()<br class="calibre9"/>
+    spot_history_df = get_spot_pricing_history(names,<br class="calibre9"/>
+        product_description="Linux/UNIX")<br class="calibre9"/>
+    df = combined_spot_df(spot_history_df, pricing_df)<br class="calibre9"/>
+    df_cluster = cluster(df, sort_by="price_ecu_spot")<br class="calibre9"/>
+    df_cluster_members = recommend_cluster(df_cluster, instance)<br class="calibre9"/>
+    click.echo(df_cluster_members[["SpotPrice",\<br class="calibre9"/>
+ "price_ecu_spot", "cluster", "price_memory_spot"]])</p>
+<p class="noindent">In action, the output looks like this.  </p>
+<p class="codelink"><a id="p175pro03" href="part0038_split_010.html#p175pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">→ ✗ ./spot-price-ml.py recommend --instance c3.8xlarge<br class="calibre9"/>
+              SpotPrice  price_ecu_spot  cluster  price_memory_spot<br class="calibre9"/>
+InstanceType                                                      <br class="calibre9"/>
+c3.2xlarge        0.098           0.003        0              0.007<br class="calibre9"/>
+c3.4xlarge        0.176           0.003        0              0.006<br class="calibre9"/>
+c3.8xlarge        0.370           0.003        0              0.006<br class="calibre9"/>
+c4.4xlarge        0.265           0.004        0              0.009<br class="calibre9"/>
+cc2.8xlarge       0.356           0.004        0              0.006<br class="calibre9"/>
+c3.large          0.027           0.004        0              0.007<br class="calibre9"/>
+c3.xlarge         0.053           0.004        0              0.007<br class="calibre9"/>
+c4.2xlarge        0.125           0.004        0              0.008<br class="calibre9"/>
+c4.8xlarge        0.557           0.004        0              0.009<br class="calibre9"/>
+c4.xlarge         0.060           0.004        0              0.008<br class="calibre9"/>
+hi1.4xlarge       0.370           0.011        0              0.006</p>
+<h5 class="calibre17"><span epub:type="pagebreak" id="page_176"></span>Writing a Spot Instance Launcher</h5>
+<p class="noindent">There are many levels to working with Spot instances. This section will tackle a few of the layers, starting with an easy example and working forward from there. Spot instances are the life’s blood of ML on AWS. Understanding how to use them correctly can make or break a company, a project, or a hobby. A recommended best practice is to create self-expiring Spot instances that terminate automatically before an hour is up. This is the hello world of launching Spot instances—at least, the recommended hello world.</p>
+<p class="noindent">In this first section, the click library is imported along with Boto and the Base64 library. The user data that gets sent to AWS needs to be Base64 encoded, and this will be shown in a further snippet. Note that if the line with boto.set_stream_logger is uncommented, there will be very verbose logging messages (that can be very helpful when trying out options).</p>
+<p class="codelink"><a id="p176pro01" href="part0038_split_011.html#p176pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">#!/usr/bin/env python<br class="calibre9"/>
+"""Launches a test spot instance"""<br class="calibre9"/>
+<br class="calibre9"/>
+import click<br class="calibre9"/>
+import boto3<br class="calibre9"/>
+import base64<br class="calibre9"/>
+<br class="calibre9"/>
+from sensible.loginit import logger<br class="calibre9"/>
+log = logger(__name__)<br class="calibre9"/>
+<br class="calibre9"/>
+#Tell Boto3 To Enable Debug Logging<br class="calibre9"/>
+#boto3.set_stream_logger(name='botocore')</p>
+<p class="noindent">In the next section, the command-line tool is set up and the user data options are configured with an automatic termination. This is a great trick that Eric Hammond (<a href="https://www.linkedin.com/in/ehammond/" class="calibre7">https://www.linkedin.com/in/ehammond/</a>) invented. Essentially, right when the machine launches, a job is set up using the “at” facility, which terminates the instance. This trick is expanded in this command-line tool, which allows a user to set the duration if he wants to change the default of 55 minutes.</p>
+<p class="codelink"><a id="p176pro02" href="part0038_split_012.html#p176pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">@click.group()<br class="calibre9"/>
+def cli():<br class="calibre9"/>
+    """Spot Launcher"""<br class="calibre9"/>
+<br class="calibre9"/>
+<br class="calibre9"/>
+def user_data_cmds(duration):<br class="calibre9"/>
+    """Initial cmds to run, takes duration for halt cmd"""<br class="calibre9"/>
+<br class="calibre9"/>
+    cmds = """<br class="calibre9"/>
+        #cloud-config<br class="calibre9"/>
+        runcmd:<br class="calibre9"/>
+         - echo "halt" | at now + {duration} min<br class="calibre9"/>
+    """.format(duration=duration)<br class="calibre9"/>
+    return cmds</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_177"></span>In the following options, everything is set as a default, which only requires the user to specify the launch command. The options are then passed into the Spot request API call to the Boto3 client.</p>
+<p class="codelink"><a id="p177pro01" href="part0038_split_013.html#p177pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">@cli.command("launch")<br class="calibre9"/>
+@click.option('--instance', default="r4.large", help='Instance Type')<br class="calibre9"/>
+@click.option('--duration', default="55", help='Duration')<br class="calibre9"/>
+@click.option('--keyname', default="pragai", help='Key Name')<br class="calibre9"/>
+@click.option('--profile',\<br class="calibre9"/>
+        default="arn:aws:iam::561744971673:instance-profile/admin",<br class="calibre9"/>
+                     help='IamInstanceProfile')<br class="calibre9"/>
+@click.option('--securitygroup',\<br class="calibre9"/>
+        default="sg-61706e07", help='Key Name')<br class="calibre9"/>
+@click.option('--ami', default="ami-6df1e514", help='Key Name')<br class="calibre9"/>
+def request_spot_instance(duration, instance, keyname,<br class="calibre9"/>
+                            profile, securitygroup, ami):<br class="calibre9"/>
+    """Request spot instance"""<br class="calibre9"/>
+<br class="calibre9"/>
+  <br class="calibre9"/>
+    user_data = user_data_cmds(duration)<br class="calibre9"/>
+    LaunchSpecifications = {<br class="calibre9"/>
+            "ImageId": ami,<br class="calibre9"/>
+            "InstanceType": instance,<br class="calibre9"/>
+            "KeyName": keyname,<br class="calibre9"/>
+            "IamInstanceProfile": {<br class="calibre9"/>
+                "Arn": profile<br class="calibre9"/>
+            },<br class="calibre9"/>
+            "UserData": base64.b64encode(user_data.encode("ascii")).\<br class="calibre9"/>
+                decode('ascii'),<br class="calibre9"/>
+            "BlockDeviceMappings": [<br class="calibre9"/>
+                {<br class="calibre9"/>
+                    "DeviceName": "/dev/xvda",<br class="calibre9"/>
+                    "Ebs": {<br class="calibre9"/>
+                        "DeleteOnTermination": True,<br class="calibre9"/>
+                        "VolumeType": "gp2",<br class="calibre9"/>
+                        "VolumeSize": 8,<br class="calibre9"/>
+                    }<br class="calibre9"/>
+                }<br class="calibre9"/>
+            ],<br class="calibre9"/>
+            "SecurityGroupIds": [securitygroup]<br class="calibre9"/>
+        }<br class="calibre9"/>
+<br class="calibre9"/>
+    run_args = {<br class="calibre9"/>
+            'SpotPrice'           : "0.8",<br class="calibre9"/>
+            'Type'                : "one-time",<br class="calibre9"/>
+            'InstanceCount'       : 1,<br class="calibre9"/>
+            'LaunchSpecification' : LaunchSpecifications<br class="calibre9"/>
+        }<br class="calibre9"/>
+<br class="calibre9"/>
+    msg_user_data = "SPOT REQUEST DATA: %s" % run_args<br class="calibre9"/>
+    log.info(msg_user_data)<br class="calibre9"/>
+<br class="calibre9"/>
+    client = boto3.client('ec2', "us-west-2")<br class="calibre9"/>
+    reservation = client.request_spot_instances(**run_args)<br class="calibre9"/>
+    return reservation<br class="calibre9"/>
+<br class="calibre9"/>
+if __name__ == '__main__':<br class="calibre9"/>
+    cli()</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_178"></span>When the command-line tool is run with help, the output shows the options that can be changed. Note that there isn’t an option for price, for a couple of reasons. First, the Spot price is market driven, so the request will always use the lowest price. Second, this can easily be added using the same technique shown.</p>
+<p class="codelink"><a id="p178pro01" href="part0038_split_015.html#p178pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">→ ./spot_launcher.py launch --help<br class="calibre9"/>
+Usage: spot_launcher.py launch [OPTIONS]<br class="calibre9"/>
+<br class="calibre9"/>
+  Request spot instance<br class="calibre9"/>
+<br class="calibre9"/>
+Options:<br class="calibre9"/>
+  --instance TEXT       Instance Type<br class="calibre9"/>
+  --duration TEXT       Duration<br class="calibre9"/>
+  --keyname TEXT        Key Name<br class="calibre9"/>
+  --profile TEXT        IamInstanceProfile<br class="calibre9"/>
+  --securitygroup TEXT  Key Name<br class="calibre9"/>
+  --ami TEXT            Key Name<br class="calibre9"/>
+  --help                Show this message and exit.</p>
+<p class="noindent">When launching a Spot instance with a new duration, say, 1 hour 55 minutes, it can be modified by setting the <code class="calibre11">--duration</code> option.</p>
+<p class="codelink"><a id="p178pro02" href="part0038_split_016.html#p178pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">→✗ ./spot_launcher.py launch --duration 115<br class="calibre9"/>
+2017-09-20 06:46:53,046 - __main__ - INFO –<br class="calibre9"/>
+SPOT REQUEST DATA: {'SpotPrice': '0.8', 'Type':<br class="calibre9"/>
+'one-time', 'InstanceCount': 1, 'LaunchSpecification':<br class="calibre9"/>
+ {'ImageId': 'ami-6df1e514', 'InstanceType':<br class="calibre9"/>
+'r4.large', 'KeyName': 'pragai', 'IamInstanceProfile':<br class="calibre9"/>
+ {'Arn': 'arn:aws:iam::561744971673:instance-profile/admin'},<br class="calibre9"/>
+.....</p>
+<p class="noindent">The instance can then be found by going to the EC2 dashboard for the region in which it was launched. For this request, this would be <a href="https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=ipv6Ips" class="calibre7">https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=ipv6Ips</a> in your AWS Console. This is shown in <a href="part0020.html#ch9fig3" class="calibre7">Figure 9.3</a>, where the connection information to ssh into the machine are provided.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_179"></span><a id="ch9fig3" class="calibre7"></a><img src="../images/00051.jpeg" aria-describedby="alt_09fig03" alt="“Connect To Your Instance” dialog box is shown." class="calibre8"/>
+<aside class="hidden" id="alt_09fig03" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">For “I would like to connect with,” “A standalone S S H client” radio button is selected. The following information is displayed in the box: To access your instance: 1. Open an S S H client. (find out how to connect using PuTTY) 2. Locate your private key file (pragai.pem). The wizard automatically detects the key you used to launch the instance. 3. Your key must not be publicly viewable for S S H to work. Use this command if needed: chmod 400 pragai.pem 4. Connect to your instance using its Public D N S: ec2-52-26-11-129.us-west-2.compute.amazonaws.com Example: ssh -i "pragai.pme" ec2-user@ec2-52-26-11-129.us-west-2.compute.amzazonaws.com Please note that in most cases the username above will be correct, however please ensure that you read your AMI usage instructions to ensure that the AMI owner has not changed the default AMI username. If you need any assistance connecting to your instance, please see our connection documentation.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 9.3</span> Representation of AWS Spot Connect to Instance</p>
+</div>
+<p class="noindent">Using that information, an ssh connection is created to the Spot instance.</p>
+<p class="codelink"><a id="p179pro01" href="part0038_split_017.html#p179pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">→✗ ssh -i "~/.ssh/pragai.pem" ec2-user@52.26.11.129<br class="calibre9"/>
+The authenticity of host '52.26.11.129 (52.26.11.129)'<br class="calibre9"/>
+ECDSA key fingerprint is SHA256:lTaVeVv0L7GE...<br class="calibre9"/>
+Are you sure you want to continue connecting (yes/no)? yes<br class="calibre9"/>
+Warning: Permanently added '52.26.11.129'<br class="calibre9"/>
+<br class="calibre9"/>
+       __|  __|_  )<br class="calibre9"/>
+       _|  (     /   Amazon Linux AMI<br class="calibre9"/>
+      ___|\___|___|<br class="calibre9"/>
+<br class="calibre9"/>
+https://aws.amazon.com/amazon-linux-ami/2017.03-release-notes/<br class="calibre9"/>
+9 package(s) needed for security, out of 13 available<br class="calibre9"/>
+Run "sudo yum update" to apply all updates.<br class="calibre9"/>
+[ec2-user@ip-172-31-8-237 ~]$</p>
+<p class="noindent">From the Amazon Linux shell, the uptime command will inform how long the instance has been running. This instance has been running for 1 hour 31 minutes and will run for a little over 20 more minutes before it terminates.</p>
+<p class="codelink"><a id="p179pro02" href="part0038_split_018.html#p179pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">[ec2-user@ip-172-31-8-237 ~]$ uptime<br class="calibre9"/>
+ 15:18:52 up  1:31,  1 user,  load average: 0.00, 0.00, 0.00</p>
+<p class="noindent">Switching into the root user, the job to halt the machine can be verified.</p>
+<p class="codelink"><a id="p179pro03" href="part0038_split_019.html#p179pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">[ec2-user@ip-172-31-8-237 ~]$ sudo su -<br class="calibre9"/>
+[root@ip-172-31-8-237 ~]# at -l<br class="calibre9"/>
+1   2017-09-20 15:42 a root</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_180"></span>Next, the actual command that will be run at that time in the future can be inspected.</p>
+<p class="codelink"><a id="p180pro01" href="part0038_split_020.html#p180pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">#!/bin/sh<br class="calibre9"/>
+# atrun uid=0 gid=0<br class="calibre9"/>
+# mail root 0<br class="calibre9"/>
+umask 22<br class="calibre9"/>
+PATH=/sbin:/usr/sbin:/bin:/usr/bin; export PATH<br class="calibre9"/>
+RUNLEVEL=3; export RUNLEVEL<br class="calibre9"/>
+runlevel=3; export runlevel<br class="calibre9"/>
+PWD=/; export PWD<br class="calibre9"/>
+LANGSH_SOURCED=1; export LANGSH_SOURCED<br class="calibre9"/>
+LANG=en_US.UTF-8; export LANG<br class="calibre9"/>
+PREVLEVEL=N; export PREVLEVEL<br class="calibre9"/>
+previous=N; export previous<br class="calibre9"/>
+CONSOLETYPE=serial; export CONSOLETYPE<br class="calibre9"/>
+SHLVL=4; export SHLVL<br class="calibre9"/>
+UPSTART_INSTANCE=; export UPSTART_INSTANCE<br class="calibre9"/>
+UPSTART_EVENTS=runlevel; export UPSTART_EVENTS<br class="calibre9"/>
+UPSTART_JOB=rc; export UPSTART_JOB<br class="calibre9"/>
+cd / || {<br class="calibre9"/>
+     echo 'Execution directory inaccessible' &gt;&amp;2<br class="calibre9"/>
+     exit 1<br class="calibre9"/>
+}<br class="calibre9"/>
+${SHELL:-/bin/sh} &lt;&lt; 'marcinDELIMITER6382915b'<br class="calibre9"/>
+halt</p>
+<p class="noindent">There are some exciting changes from Amazon that make this style of research and development even more appealing. As of October 3, 2017, Amazon is offering billing by the second, with 1-minute minimums. This absolutely changes the game for how Spot instances can be used. One of the most obvious changes is that it is now practical to simply use Spot instances to run ad hoc functions, and when they are finished, in say 30 seconds, the instance can be shut down.</p>
+<p class="noindent">The next step to take beyond this simple Spot launcher for many production projects is to get production software deployed onto the instance being launched. There are many ways to accomplish this.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">Passing a shell script to an instance on launch, which is the method just shown. You can see some more complicated examples from the official AWS docs (<a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html" class="calibre7">http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html</a>).</p></li>
+<li class="calibre14"><p class="bullet">Modifying the AMI itself, then using that snapshot on launch. There are a couple of ways to do this. One is to just launch an instance, configure it, then save it. Another method is to use the AMI Builder Packer (<a href="https://www.packer.io/docs/builders/amazon-ebs.html" class="calibre7">https://www.packer.io/docs/builders/amazon-ebs.html</a>). When the instance is launched, the machine will already have the software needed. This approach could also be used in conjunction with other approaches, say a prebuilt AMI, plus custom shell script.</p></li>
+<li class="calibre14"><p class="bullet">Use EFS upon boot to store both data and software and to link binaries and scripts into the environment. This is an approach that was very common in the NFS days of Solaris and other Unix systems, and it is a wonderful way to customize the environment of Spot instances. The EFS volume can be updated via a build server with rsync or a copy.</p></li>
+<li class="calibre14"><p class="bullet">Using AWS Batch with Docker containers is also a viable option.</p></li>
+</ul>
+<h5 class="calibre17"><span epub:type="pagebreak" id="page_181"></span>Writing a More Sophisticated Spot Instance Launcher</h5>
+<p class="noindent">A more sophisticated Spot launcher would install some software on the system, pull in the source code from a repository, run that source code, and the put the output of the code in, say, S3. To do this, a couple of pieces will need to be changed. First, the <code class="calibre11">buildspec.yml</code> file will need to be modified so that it copies the source code to S3. Note that the sync command with <code class="calibre11">--</code>delete is useful in that it intelligently syncs just the files that have changed and deletes files that no longer exist.</p>
+<p class="codelink"><a id="p181pro01" href="part0038_split_021.html#p181pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">  post_build:<br class="calibre9"/>
+    commands:<br class="calibre9"/>
+      - echo "COPY Code TO S3"<br class="calibre9"/>
+      - rm -rf ~/.aws<br class="calibre9"/>
+      - aws s3 sync $CODEBUILD_SRC_DIR \<br class="calibre9"/>
+s3://pragai-aws/master --delete</p>
+<p class="noindent">Typically, with build commands like this, I run them locally to make sure I understand what they are doing. Next, Python and a virtual environment will need to be installed as the machine is launching. This can be accomplished by modifying the runcmd’s passed to the instance upon boot. The first modified section grabs Python and installs it along with the packages Python needs to install. Note that ensurepip is used because this will allow the Makefile to just work.</p>
+<p class="codelink"><a id="p181pro02" href="part0038_split_022.html#p181pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">cmds = """<br class="calibre9"/>
+        #cloud-config<br class="calibre9"/>
+        runcmd:<br class="calibre9"/>
+         - echo "halt" | at now + {duration} min<br class="calibre9"/>
+         - wget https://www.python.org/ftp/\<br class="calibre9"/>
+python/3.6.2/Python-3.6.2.tgz<br class="calibre9"/>
+         - tar zxvf Python-3.6.2.tgz<br class="calibre9"/>
+         - yum install -y gcc readline-devel\<br class="calibre9"/>
+ sqlite-devel zlib-devel openssl-devel<br class="calibre9"/>
+         - cd Python-3.6.2<br class="calibre9"/>
+         - ./configure --with-ensurepip=install &amp;&amp; make install</p>
+<p class="noindent">Next, the source code that was synced to S3 is pulled down locally, which is a handy way to deploy code to an instance. It is very fast and uses Git ssh keys, and passwords are avoided since the Spot instance has role privileges to communicate with S3. After the S3 data is copied locally, it is sourced using virtualenv and then the ML Spot prices tool is run and the output is sent to S3.</p>
+<p class="codelink"><a id="p181pro03" href="part0038_split_023.html#p181pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">         - cd ..<br class="calibre9"/>
+         - aws s3 cp s3://pragai-aws/master master\<br class="calibre9"/>
+ --recursive &amp;&amp; cd master<br class="calibre9"/>
+         - make setup<br class="calibre9"/>
+         - source ~/.pragia-aws/bin/activate &amp;&amp; make install<br class="calibre9"/>
+         - ~/.pragia-aws/bin/python spot-price-ml.py\<br class="calibre9"/>
+ describe &gt; prices.txt<br class="calibre9"/>
+         - aws s3 cp prices.txt s3://spot-jobs-output<br class="calibre9"/>
+    """.format(duration=duration)<br class="calibre9"/>
+    return cmds</p>
+<p class="noindent">A natural next step is to take the prototype and make it more modular so that any arbitrary ML operation could be executed as a script, not just the hard-coded example. In <a href="part0020.html#ch9fig4" class="calibre7">Figure 9.4</a>,  a high-level overview of this pipeline shows how this process works in practice.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_182"></span><a id="ch9fig4" class="calibre7"></a><img src="../images/00052.jpeg" aria-describedby="alt_09fig04" alt="The lifecycle of A W S spot transient job is shown." class="calibre8"/>
+<aside class="hidden" id="alt_09fig04" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">A box representing “A W S Code Build” leads to another box representing “A W S S3 (Source Code Built)” and also to a box representing “A W S Spot Instance Request.” An arrow from the box “A W S S3 (Source Code Built)” indicated as “Source Code Synced to Spot Instance” leads to another box representing “A W S Spot Instance Software Installed.” The box “A W S Spot Instance Request” also leads to the box “A W S Spot Instance Software Installed.”</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 9.4</span> AWS Spot Transient Job Lifecycle</p>
+</div>
+<h3 id="ch09lev2" class="calibre12">Summary</h3>
+<p class="noindent">This chapter looked at one of the details of ML that is often neglected—actually running  jobs on AWS. Several important concerns were tackled with Spot instances: finding the right instance size, finding out the most economical way to use them, installing software on them, and deploying code.</p>
+<p class="noindent">Recent changes to AWS that allow by-the-second billing and the addition of services like AWS Batch make it a fierce competitor in the war of the clouds. The combination of per-second billing and Spot pricing has never been seen before. Creating ML systems in production on top of infrastructure that AWS has created is a very safe choice, and controlling costs in research and development is easier than ever.</p>
+<p class="noindent">Further directions that could be explored to make this AI solution even more practical would be to trigger the launch of jobs, perhaps on AWS batch, that listen to price signals and use linear optimization in combination with clustering to dynamically figure out the best time and combinations of machines to run on. An even further advancement could be to look at combining this with technologies like Nomad from HashiCorp (<a href="https://www.nomadproject.io/" class="calibre7">https://www.nomadproject.io/</a>) to dynamically run jobs on all clouds in the form of Docker images.</p>
+</body></html>

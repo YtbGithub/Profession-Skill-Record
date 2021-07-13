@@ -1,0 +1,308 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>3 Spartan AI Lifecycle</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="ch03"><span epub:type="pagebreak" id="page_47" class="calibre2"></span>3</h2>
+<h2 class="h2a">Spartan AI Lifecycle</h2>
+<p class="blockquote"><em class="calibre5">I’m going to go out there and be ridiculous and see what happens. I’ve got nothing to lose.</em></p>
+<p class="attribution">Wayde Van Niekerk</p>
+<p class="noindent">In building software, many things may seem unimportant but later turn out to be critical. Alternately, many things seem important that could be a false path. One heuristic that I have found useful is to think of things in terms of a feedback loop. At a task, is the thing you are doing speeding up the feedback loop(s) or blocking it?</p>
+<p class="noindent">The Spartan AI lifecycle is the spirit of this heuristic. Either you are speeding things up and making them more efficient, or you are not. If one inner ring of feedback loop needs to be optimized, say getting better unit tests or more reliable extract, transform, and load (ETL) services, then it should be done in a way that it doesn’t block other feedback loops.</p>
+<p class="noindent">In this chapter, approaches to thinking in this manner are discussed in real-world problems, like building your own ML model versus calling an API, or being “vendor locked in” versus building it yourself. Thinking like a Spartan AI warrior means not working on things that don’t improve the efficiency of the entire system and each subsystem. Having a heuristic to live by is refreshing and empowering. Ultimately, some things matter more than others, which is another way of saying no to nonsense.</p>
+<h3 id="ch03lev1" class="calibre12">Pragmatic Production Feedback Loop</h3>
+<p class="noindent">In <a href="part0012.html#ch3fig1" class="calibre7">Figure 3.1</a>, the technology feedback loop describes the thought process behind creating technology. Technology, whether it is creating ML models or web applications, has a feedback loop that needs to be accounted for. If the feedback loop is slow, broken, or not interconnected, there will be hell to pay. A few examples of broken feedback loops at places I have worked are presented in this chapter.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_48"></span><a id="ch3fig1" class="calibre7"></a><img src="../images/00008.jpeg" aria-describedby="alt_03fig01" alt="A figure depicts the technology feedback loop." class="calibre8"/>
+<aside class="hidden" id="alt_03fig01" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">Three concentric feedback loops are shown running in the clockwise direction. The feedback from the innermost loop points to the second inner loop and from which the feedback points to the outer loop.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.1</span> Technology Feedback Loop</p>
+</div>
+<p class="noindent">Developers committing code infrequently is a common problem for startups and other companies. A ratio I have created in an open source project devml called Active Ratio looks at the percentage of time a developer checks in code on average. For example, are developers checking in code on average 4 out of 5 days per week, or are they checking in code about once a week, or in extreme situations, once every three months?</p>
+<p class="noindent">A common misconception is for developers and managers to smugly talk about how source code metrics are misleading, as in, the number of lines of code per day doesn’t mean anything. Just because it is hard to reason about source code metrics doesn’t mean the information isn’t valuable. Active Ratio looks at the behavioral aspects of source code, which are much more interesting than vanity metrics. A good example of this would be to look in the physical world. If a painter is subcontracted to paint a house and only spend 25 percent of his time painting, what is going on? There are a few options that come to mind, and the obvious ones are that the painter may be doing a bad job or is taking advantage of the client. Less obvious, but possible, is that the project may be horribly managed. What if the main contractor keeps blocking the main road to the house with cement trucks and the painter cannot get to the worksite several days in a row? This is a broken feedback loop.</p>
+<p class="noindent">It is true that software developers can be abused into working horrible conditions by asking developers to work 12-hour days, 7 days a week, but there are ways to look at behavioral signals in a company in a way that sanely optimizes performance and helps teams deliver more efficiently. In an ideal situation, a painter paints Monday through Friday, and a software team writes code Monday through Friday. With software, there is an “invention” aspect to it that makes it different from physical labor, and this also needs to be accounted for; this means that burning the candle at both ends can lead to poor “inventions,” i.e., software. This is why I am not encouraging people to look at the Active Ratio and encourage developers to work 7 days a week and commit every day, nor to encourage developers to go on epic 400-day commit streak binges where they commit code to GitHub every day.</p>
+<p class="noindent">Instead, what behavioral metrics around the feedback loops do is encourage sophisticated teams to look at what is really going on. Maybe there is a lack of effective project management in the software team that is committing code only a couple of days per week. I have absolutely seen <span epub:type="pagebreak" id="page_49"></span>companies that let a “scrum master” or the “founder” suck developers into all-day or frequent-day meetings that just waste everyone’s time. In fact, the company most certainly will fail if this doesn’t get fixed. The road to the worksite is quite definitely dropped. These are the types of situations that can be spotted by diving into the metrics around feedback loops.</p>
+<p class="noindent">Another feedback loop is the data science feedback loop. How does a company really solve data-related problems, and what is the feedback loop? Ironically, many data science teams are not really adding value to organizations because the feedback loop is broken. How is it broken? Mainly because there is no feedback loop. Here are a few questions to ask.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">Can the team run experiments at will on the production system?</p></li>
+<li class="calibre14"><p class="bullet">Is the team running experiments in Jupyter Notebook and Pandas on small, unrealistic data sets only?</p></li>
+<li class="calibre14"><p class="bullet">How often does the data science team ship trained models to production?</p></li>
+<li class="calibre14"><p class="bullet">Is the company unwilling to use or unaware of pretrained ML models like the Google Cloud Vision API or Amazon Rekognition?</p></li>
+</ul>
+<p class="noindent">One of the open secrets about ML is that often the tools that are taught—Pandas, scikit-learn,  R DataFrames, etc.—don’t work well in production workflows by themselves. Instead, a balanced approach of using Big Data tools such as PySpark and propriety tools like AWS SageMaker, Google TPUs (TensorFlow Processing Units), and others are a necessary part of creating pragmatic solutions.</p>
+<p class="noindent">A great example of a broken feedback loop is a production SQL database that wasn’t designed to account for an ML architecture. The developers are happily coding away, while the data engineering tasks are at the mercy of transforming the tables in the SQL database to something useful using home-grown Python scripts that convert files into CSV files, which are analyzed with Pandas in an ad-hoc manner with scikit-learn. What is the feedback loop here?</p>
+<p class="noindent">It is a dead end, because even though the data eventually gets turned into something marginally useful, it is analyzed with tools that cannot be used in production, and the ML model doesn’t get deployed to production. As a manager, I have seen many data scientists who are not all that concerned about getting the ML model shipped into production, but they should be, because it completes the feedback loop. There is a pragmatism that is missing in the industry, and one of the solutions is a focus on making sure there is an ML feedback loop that gets code into production.</p>
+<p class="noindent">Through 2017 and 2018 there has been incredible progress made in tools that complete this feedback loop. A few of these tools mentioned in this chapter—such as AWS SageMaker, which focuses on rapid iteration on training ML models and deploying them to API endpoints—are aiming to solve this. Another AWS tool, AWS Glue, manages ETL processes by connecting data sources, like an SQL database, performing ETL on them and writing them back to another data source like S3 or another SQL database.</p>
+<p class="noindent">Google also toolchains like this, including BigQuery, which is one of the crown jewels of production ML in that it handles just about any performance workload that can be thrown at it. Other parts of the Google ecosystem also allow an efficient ML/AI feedback loop, such as TPUs (<a href="https://cloud.google.com/tpu/" class="calibre7">https://cloud.google.com/tpu/</a>), Datalab (<a href="https://cloud.google.com/datalab/" class="calibre7">https://cloud.google.com/datalab/</a>), and AI APIs.</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_50"></span>There is an expression that data is the new oil; to stick with that analogy, you cannot put oil in an internal combustion engine. A petroleum-based feedback loop is necessary for that. It starts with finding and extracting oil with industrial-strength machines (i.e., what cloud providers are starting to expose), and then the oil has to be transported and refined before it is delivered to gas stations. Imagine a situation in which a bunch of engineers are drilling holes into a pit, and with an ad hoc laboratory, trying to refine oil, then putting batches of gas into cars that somehow found their way to the drilling site. This is what data science is currently in many companies and why it is going to rapidly change.</p>
+<p class="noindent">Recognizing this challenge and opportunity and doing something about it is going to be a fork in the road for many organizations. The status quo of tinkering with data just isn’t going to cut it, and the laboratory will need to be converted into a refinery capable of delivering high-quality, high-volume quantities back into production. Creating bespoke batches of high-octane fuel by a dig site is just as practical as doing data science in a vacuum.</p>
+<h3 id="ch03lev2" class="calibre12">AWS SageMaker</h3>
+<p class="noindent">SageMaker is an exciting piece of technology coming out of Amazon that tackles a big problem—in fact, the problem discussed earlier in this chapter. It closes one of the loops for ML in the real world. <a href="part0012.html#ch3fig2" class="calibre7">Figure 3.2</a> highlights the process: First an EDA and/or model training is performed via a notebook instance. Next, a job is kicked off on a machine, a model is trained, and then an endpoint is deployed…potentially to production.</p>
+<div class="figure">
+<div class="image1"><a id="ch3fig2" class="calibre7"></a><img src="../images/00009.jpeg" aria-describedby="alt_03fig02" alt="A screenshot of an A W S Sagemaker Feedback Loop is shown." class="calibre8"/>
+<aside class="hidden" id="alt_03fig02" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen displays, Amazon SageMaker overview of the Dashboard. The overview shows a process where three data files within a cloud with a gear represent Notebook instance. A description below reads, Explore AWS data in your notebooks, and, use algorithms to create models via training jobs. A button, Create notebook instance is shown at the bottom of this process. The Notebook instance flows to a process where three training jobs within a cloud with a gear represent Jobs. A description below reads, Track training jobs at your desk or remotely. Leverage high-performance A W S algorithms. A button, View jobs is shown at the bottom of this process. The Jobs flows to another process where three jobs within a cloud that represents Models. A description below reads, Create models for hosting from job outputs or import externally trained models into Amazon SageMaker. A button, “View models” is shown at the bottom of this process. The models flow to a wireless connection that represents Endpoint. A description below reads, Deploy endpoints for developers to use in production. A or B Test model variants via an endpoint. A button, View endpoints is shown at the bottom of this process.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.2</span> Representation of a Sagemaker Feedback Loop</p>
+</div>
+<p class="noindent">Finally, what makes this incredibly powerful is by using Boto; this can be easily put into an API using chalice or raw AWS Lambda, or even the endpoint itself, as seen in <a href="part0012.html#ch3fig3" class="calibre7">Figure 3.3</a>.</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_51"></span><a id="ch3fig3" class="calibre7"></a><img src="../images/00010.jpeg" aria-describedby="alt_03fig03" alt="A screenshot displays the Endpoint settings of Sagemaker." class="calibre8"/>
+<aside class="hidden" id="alt_03fig03" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows the Model name, kmeans-2018-02-23-23-35-07-844 at the top left and a delete button on the right. The Endpoint settings components as shown below as follows: Name, A R N, Status, Creation time, Last updated, and URL.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.3</span> Representation of Sagemaker</p>
+</div>
+<p class="noindent">How does this look in practice from Boto? It’s pretty simple.</p>
+<p class="codelink"><a id="p051pro01" href="part0032_split_000.html#p051pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">import boto3<br class="calibre9"/>
+sm_client = boto3.client('runtime.sagemaker')<br class="calibre9"/>
+response = sm_client.invoke_endpoint(EndpointName=endpoint_name,<br class="calibre9"/>
+                                   ContentType='text/x-libsvm',<br class="calibre9"/>
+                                   Body=payload)<br class="calibre9"/>
+result = response['Body'].read()<br class="calibre9"/>
+result = result.decode("utf-8")<br class="calibre9"/>
+print(result)</p>
+<p class="noindent">SageMaker also has built-in ML models that it maintains such as k-means, Neural Topic Model, principal component analysis, and more. The SageMaker algorithms are packaged as Docker images, and it is possible to use almost any algorithm. What is powerful about this approach is that by using SageMaker k-means implementation, there are going to be reasonable guarantees about performance and compatibility in generating repeatable production workflows. At the same time, though, highly optimized custom algorithms can be generated as repeatable Docker builds.</p>
+<h3 id="ch03lev3" class="calibre12">AWS Glue Feedback Loop</h3>
+<p class="noindent">AWS Glue is a great example of a feedback loop inside of the main feedback loop. There is a crisis of legacy SQL and NoSQL databases being internally “crawled” by bad scripts. AWS Glue goes a long way in solving this problem. It is a fully managed ETL service that mitigates much of the typical nastiness of ETL.</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_52"></span>How does it work? <a href="part0012.html#ch3fig4" class="calibre7">Figure 3.4</a> shows what it does.</p>
+<div class="figure">
+<div class="image1"><a id="ch3fig4" class="calibre7"></a><img src="../images/00011.jpeg" aria-describedby="alt_03fig04" alt="A figure directs the working of an A W S Glue Feedback Loop." class="calibre8"/>
+<aside class="hidden" id="alt_03fig04" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The database: S3, R D S, Redshift, and JDBC collectively flows to a Crawler. A translator, Python Scripts is shown below the database. The gathered data from the Crawler flows to a Classifier and from which it flows to a Catalog. The data are transformed back to the database from the Catalog.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.4</span> AWS Glue ETL Pipeline</p>
+</div>
+<p class="noindent">One example of how AWS Glue works is as follows. You have a legacy PostgreSQL database that stores the customer database for your startup. You connect AWS Glue to this database and it “infers” that schema for you. You can see what this looks like in <a href="part0012.html#ch3fig5" class="calibre7">Figure 3.5</a>.</p>
+<div class="figure">
+<div class="image1"><a id="ch3fig5" class="calibre7"></a><img src="../images/00012.jpeg" aria-describedby="alt_03fig05" alt="A screenshot of the inferred AWS Glue is shown." class="calibre8"/>
+<aside class="hidden" id="alt_03fig05" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen displays, Schema in a table form. The table consists of 5 rows and 3 columns. The column header includes Column name, Data type, and Key. The data in the column, Key are left empty. Row 1 reads: updated_at and timestamp. Row 2 reads: name and string. Row 3 reads: created_at and timestamp. Row 4 reads: id and int. Row 5 reads local and strings.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.5</span> Representation of AWS Glue</p>
+</div>
+<p class="noindent">Next, a job is created that can be a Python or Scala script that will translate the schema into another format and destination. These scripts look something like this (abbreviated for space). You can accept these default scripts, which are stored in S3, or tweak them.</p>
+<p class="codelink"><a id="p052pro01" href="part0032_split_001.html#p052pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">import sys<br class="calibre9"/>
+from awsglue.transforms import *<br class="calibre9"/>
+from awsglue.utils import getResolvedOptions<br class="calibre9"/>
+from pyspark.context import SparkContext<br class="calibre9"/>
+from awsglue.context import GlueContext<br class="calibre9"/>
+from awsglue.job import Job<br class="calibre9"/>
+## @params: [JOB_NAME]<br class="calibre9"/>
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])<br class="calibre9"/>
+####abbreviated<br class="calibre9"/>
+sc = SparkContext()<br class="calibre9"/>
+glueContext = GlueContext(sc)<br class="calibre9"/>
+spark = glueContext.spark_session<br class="calibre9"/>
+job = Job(glueContext)<br class="calibre9"/>
+job.init(args['JOB_NAME'], args)<br class="calibre9"/>
+####abbreviated<br class="calibre9"/>
+## @inputs: [frame = applymapping1]<br class="calibre9"/>
+datasink2 = glueContext.write_dynamic_frame.\<br class="calibre9"/>
+        from_options(frame = applymapping1,<br class="calibre9"/>
+        connection_type = "s3",<br class="calibre9"/>
+        connection_options =\<br class="calibre9"/>
+        {"path": "s3://dev-spot-etl-pg/tables/scrummaster"},<br class="calibre9"/>
+        format = "csv", transformation_ctx = "datasink2")<br class="calibre9"/>
+job.<span class="empitalic">commit</span>()</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_53"></span>After that, these jobs can be scheduled via triggers: events or cron jobs. Of course, this can also be scripted via Python using Boto. The best part of this service? There is business continuity. If a developer quits or is fired, the service is easily maintained by the next developer. This is a reliable feedback loop that doesn’t hinge on the individual strength of a specific key hire.</p>
+<p class="noindent">AWS Glue is also a good fit as part of a larger pipeline of data processing. Beyond just connecting to a relational database, AWS Glue can do ETL on data stored in S3. One potential source of this data is the Amazon Kinesis service, which could be dumping a stream of data into an S3 bucket. Here is an example of what that pipeline could look like with some async firehose events  getting sent to S3. First, a connection to the Boto3 Firehose client is created and an <code class="calibre11">asyncio</code>  event is made.</p>
+<p class="codelink"><a id="p053pro01" href="part0032_split_002.html#p053pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">import asyncio<br class="calibre9"/>
+import time<br class="calibre9"/>
+import datetime<br class="calibre9"/>
+import uuid<br class="calibre9"/>
+import boto3<br class="calibre9"/>
+import json<br class="calibre9"/>
+<br class="calibre9"/>
+<br class="calibre9"/>
+LOG = get_logger(__name__)<br class="calibre9"/>
+<br class="calibre9"/>
+def firehose_client(region_name="us-east-1"):<br class="calibre9"/>
+    """Kinesis Firehose client"""<br class="calibre9"/>
+<br class="calibre9"/>
+    firehose_conn = boto3.client("firehose", region_name=region_name)<br class="calibre9"/>
+    extra_msg = {"region_name": region_name,\<br class="calibre9"/>
+        "aws_service": "firehose"}<br class="calibre9"/>
+    LOG.info("firehose connection initiated", extra=extra_msg)<br class="calibre9"/>
+    return firehose_conn<br class="calibre9"/>
+<br class="calibre9"/>
+async def put_record(data,<br class="calibre9"/>
+            client,<br class="calibre9"/>
+            delivery_stream_name="test-firehose-nomad-no-lambda"):<br class="calibre9"/>
+    """<br class="calibre9"/>
+    See this:<br class="calibre9"/>
+        http://boto3.readthedocs.io/en/latest/reference/services/<br class="calibre9"/>
+        firehose.html#Firehose.Client.put_record<br class="calibre9"/>
+    """<br class="calibre9"/>
+    extra_msg = {"aws_service": "firehose"}<br class="calibre9"/>
+    LOG.info(f"Pushing record to firehose: {data}", extra=extra_msg)<br class="calibre9"/>
+    response = client.put_record(<br class="calibre9"/>
+        DeliveryStreamName=delivery_stream_name,<br class="calibre9"/>
+        Record={<br class="calibre9"/>
+            'Data': data<br class="calibre9"/>
+        }<br class="calibre9"/>
+    )<br class="calibre9"/>
+    return response</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_54"></span>Next, a unique user ID (UUID) is created, which will be used for the events that get sent in the async stream.</p>
+<p class="codelink"><a id="p054pro00a" href="part0032_split_004.html#p054pro00aa" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def gen_uuid_events():<br class="calibre9"/>
+    """Creates a time stamped UUID based event"""<br class="calibre9"/>
+<br class="calibre9"/>
+    current_time = 'test-{date:%Y-%m-%d %H:%M:%S}'.\<br class="calibre9"/>
+    format(date=datetime.datetime.now())<br class="calibre9"/>
+    event_id = str(uuid.uuid4())<br class="calibre9"/>
+    event = {event_id:current_time}<br class="calibre9"/>
+    return json.dumps(event)</p>
+<p class="noindent">Finally, an async event loop fires these messages into Kinesis, which again, will eventually put them into S3 for AWS Glue to transform. Completing the loop then requires hooking up the Glue S3 Crawler, as shown in <a href="part0012.html#ch3fig6" class="calibre7">Figure 3.6</a>, which will “inspect” the schema and create tables that can then be turned into an ETL job that later runs.</p>
+<p class="codelink"><a id="p054pro01" href="part0032_split_005.html#p054pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def send_async_firehose_events(count=100):<br class="calibre9"/>
+    """Async sends events to firehose"""<br class="calibre9"/>
+<br class="calibre9"/>
+    start = time.time()<br class="calibre9"/>
+    client = firehose_client()<br class="calibre9"/>
+    extra_msg = {"aws_service": "firehose"}<br class="calibre9"/>
+    loop = asyncio.get_event_loop()<br class="calibre9"/>
+    tasks = []<br class="calibre9"/>
+    LOG.info(f"sending aysnc events TOTAL {count}",extra=extra_msg)<br class="calibre9"/>
+    num = 0<br class="calibre9"/>
+    for _ in range(count):<br class="calibre9"/>
+        tasks.append(asyncio.ensure_future(<br class="calibre9"/>
+                 put_record(gen_uuid_events(), client)))<br class="calibre9"/>
+        LOG.info(f"sending aysnc events: COUNT {num}/{count}")<br class="calibre9"/>
+        num +=1<br class="calibre9"/>
+    loop.run_until_complete(asyncio.wait(tasks))<br class="calibre9"/>
+    loop.close()<br class="calibre9"/>
+    end = time.time()  <br class="calibre9"/>
+    LOG.info("Total time: {}".format(end - start))</p>
+<div class="figure">
+<div class="image1"><span epub:type="pagebreak" id="page_55"></span><a id="ch3fig6" class="calibre7"></a><img src="../images/00013.jpeg" aria-describedby="alt_03fig06" alt="A screenshot of an A W S Glue S3 Crawler is shown." class="calibre8"/>
+<aside class="hidden" id="alt_03fig06" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen, Add crawler displays S3 Crawler option selected under the Crawler info on the left. On the right, “Add a data store” is shown and below which the Data store drop-down list box reads, S3. The “Crawl data In” section consists of two radio buttons: Specified path in my account (selected) and Specified path in another account. The “Include path” (browse file) option is shown where a file is chosen. An exclude patterns (optional) section is shown. Two buttons: Back and Next (selected) are shown at the bottom.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.6</span> Representation of AWS Glue S3 Crawler</p>
+</div>
+<h3 id="ch03lev4" class="calibre12">AWS Batch</h3>
+<p class="noindent">AWS Batch is another service that frees companies and data science teams from writing meaningless code. It is very common to need to run batch jobs that do things like k-means clustering or preprocessing parts of a data pipeline. Again, often this is a broken feedback loop teetering on the verge of collapse when a couple of key employees quit.</p>
+<p class="noindent">In <a href="part0012.html#ch3fig7" class="calibre7">Figure 3.7</a>, an example AWS Batch pipeline shows how piecing prebuilt services can create a very reliable service that uses “off-the-shelf image classification” with AWS Recognition and  “off-the-shelf” batch and event processing tools from AWS.</p>
+<div class="figure">
+<div class="image1"><a id="ch3fig7" class="calibre7"></a><img src="../images/00014.jpeg" aria-describedby="alt_03fig07" alt="A figure of an AWS Batch Pipeline for Image classification is shown." class="calibre8"/>
+<aside class="hidden" id="alt_03fig07" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The Images data are shown flowing to S3 database and from which it flows down to an Object Creation Event. The data from the Object Creation Event flows to an A W S Lambda. An upward arrow, Lambda Invoke Batch flows to an A W S Batch Jobs and from which it flows to a Dockerfile (Job uses A W S Docker Registry) and to an A W S Recognition. An upward arrow, Image Labels Indexed flows to an AWS Elastic Search.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 3.7</span> AWS Batch Image Classification ML Pipeline</p>
+</div>
+<p class="noindent"><span epub:type="pagebreak" id="page_56"></span>Similar to other parts of the pipeline, AWS Batch can be invoked via Python and Boto; with AWS Lambda, it could mean something like the AWS chalice framework. AWS Batch solves a pretty big problem that used to involve either extremely complicated home-grown messes or a less complicated orchestration of low-level AWS services like Simple Queue Service (SQS) and Simple Notification Service (SNS), which while powerful, can get complicated as well.</p>
+<p class="codelink"><a id="p056pro01" href="part0032_split_006.html#p056pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def batch_client():<br class="calibre9"/>
+    """Create AWS Batch Client<br class="calibre9"/>
+    {"message": "Create AWS Batch Connection"}<br class="calibre9"/>
+    {"message": "Found credentials in shared credentials file:<br class="calibre9"/>
+          ~/.aws/credentials"}<br class="calibre9"/>
+    """<br class="calibre9"/>
+<br class="calibre9"/>
+    log.info(f"Create AWS Batch Connection")<br class="calibre9"/>
+    client = boto3.client("batch")<br class="calibre9"/>
+    return client<br class="calibre9"/>
+<br class="calibre9"/>
+def submit_job(job_name="1", job_queue="first-run-job-queue",<br class="calibre9"/>
+                job_definition="Rekognition",<br class="calibre9"/>
+                command="uname -a"):<br class="calibre9"/>
+    """Submit AWS Batch Job"""<br class="calibre9"/>
+<br class="calibre9"/>
+    client = batch_client()<br class="calibre9"/>
+    extra_data = {"jobName":job_name,<br class="calibre9"/>
+                "jobQueue":job_queue,<br class="calibre9"/>
+                "jobDefinition":job_definition,<br class="calibre9"/>
+                "command":command}<br class="calibre9"/>
+    log.info("Submitting AWS Batch Job", extra=extra_data)<br class="calibre9"/>
+    submit_job_response = client.submit_job(<br class="calibre9"/>
+        jobName=job_name,<br class="calibre9"/>
+        jobQueue=job_queue,<br class="calibre9"/>
+        jobDefinition=job_definition,<br class="calibre9"/>
+        containerOverrides={'command': command}<br class="calibre9"/>
+    )<br class="calibre9"/>
+    log.info(f"Job Response: {submit_job_response}",<br class="calibre9"/>
+          extra=extra_data)<br class="calibre9"/>
+    return submit_job_response</p>
+<h3 id="ch03lev5" class="calibre12">Docker-based Feedback Loops</h3>
+<p class="noindent">Many techniques listed in this book, at the core, have Docker files included. This is an extremely powerful “micro” feedback loop. With both AWS and Google Cloud Platform (GCP), there is also the ability to package your own Docker containers and serve them out of their registry services. Up until recently, Docker was fairly fragile, but today there is very little reason to doubt that it is game-changing technology.</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_57"></span>There are many reasons to use Docker for ML. Starting at the most micro level, dealing with packaging hell on a laptop is just a waste of time when you can have a file that can be invoked in a clean sandbox that gives you a clean environment.</p>
+<p class="noindent">Why get lost in pip install and conda package management tools conflicting and fighting with themselves all over your organization, when you can declare a Dockerfile with exactly the environment that is guaranteed to work in both production and on OS X, Linux, and Windows machines?</p>
+<p class="noindent">Additionally, look at this example Dockerfile for testing a Lambda-based application. It is both short (because it builds off the Amazon Linux Dockerfile) and descriptive.</p>
+<p class="codelink"><a id="p057pro04" href="part0032_split_007.html#p057pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">FROM amazonlinux:2017.09<br class="calibre9"/>
+<br class="calibre9"/>
+RUN yum -y install python36 python36-devel gcc \<br class="calibre9"/>
+     procps libcurl-devel mod_nss crypto-utils \<br class="calibre9"/>
+     unzip<br class="calibre9"/>
+<br class="calibre9"/>
+RUN python3 --version<br class="calibre9"/>
+<br class="calibre9"/>
+# Create app directory and add app<br class="calibre9"/>
+ENV APP_HOME /app<br class="calibre9"/>
+ENV APP_SRC $APP_HOME/src<br class="calibre9"/>
+RUN mkdir "$APP_HOME"<br class="calibre9"/>
+RUN mkdir -p /artifacts/lambda<br class="calibre9"/>
+RUN python3 -m venv --without-pip ~/.env &amp;&amp; \<br class="calibre9"/>
+ curl https://bootstrap.pypa.io/get-pip.py | \<br class="calibre9"/>
+     ~/.env/bin/python3<br class="calibre9"/>
+<br class="calibre9"/>
+#copy all requirements files<br class="calibre9"/>
+COPY requirements-testing.txt requirements.txt ./<br class="calibre9"/>
+<br class="calibre9"/>
+#Install both using pip<br class="calibre9"/>
+RUN source ~/.env/bin/activate &amp;&amp; \<br class="calibre9"/>
+    pip install --install-option="--with-nss" pycurl &amp;&amp; \<br class="calibre9"/>
+    pip install -r requirements-testing.txt &amp;&amp; \<br class="calibre9"/>
+        source ~/.env/bin/activate &amp;&amp; \<br class="calibre9"/>
+            pip install -r requirements.txt<br class="calibre9"/>
+COPY . $APP_HOME</p>
+<p class="noindent">To integrate this with the AWS container registry, you would need to log in.</p>
+<p class="codelink"><a id="p057pro05" href="part0032_split_009.html#p057pro05a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">AWS_PROFILE=metamachine<br class="calibre9"/>
+AWS_DEFAULT_REGION=us-east-1<br class="calibre9"/>
+export AWS_PROFILE<br class="calibre9"/>
+export AWS_DEFAULT_REGION<br class="calibre9"/>
+<br class="calibre9"/>
+aws ecr get-login --no-include-email --region us-east</p>
+<p class="noindent">Then build this image locally.</p>
+<p class="codelink"><a id="p057pro05zz" href="part0032_split_010.html#p057pro05z" class="calibre7">Click here to view code image</a></p>
+<p class="pre">docker build -t metamachine/lambda-tester .</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_58"></span>Next, it gets tagged.</p>
+<p class="codelink"><a id="p058pro01" href="part0032_split_011.html#p058pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">docker tag metamachine/lambda-tester:latest\<br class="calibre9"/>
+ 907136348507.dkr.ecr.us-east-1.amazonaws.com\<br class="calibre9"/>
+/metamachine/myorg/name:latest</p>
+<p class="noindent">Then it gets pushed to the AWS registry.</p>
+<p class="codelink"><a id="p058pro02" href="part0032_split_012.html#p058pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">docker push 907136348507.dkr.ecr.us-east-1.amazonaws.com\<br class="calibre9"/>
+/metamachine/lambda-tester:latest</p>
+<p class="noindent">At this point, other members of the organization can run this image by pulling it down locally.</p>
+<p class="codelink"><a id="p058pro03" href="part0032_split_013.html#p058pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">docker pull 907136348507.dkr.ecr.us-east-1.amazonaws.com\<br class="calibre9"/>
+/metamachine/lambda-tester:latest</p>
+<p class="noindent">Next, running the image is pretty straightforward. So here is an example of you running the image and mounting your local filesystem as well.</p>
+<p class="codelink"><a id="p058pro04" href="part0032_split_014.html#p058pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">docker run -i -t -v `pwd`:/project 907136348507.\<br class="calibre9"/>
+dkr.ecr.us-east-1.amazonaws.com/ \<br class="calibre9"/>
+metamachine/lambda-tester /bin/bash</p>
+<p class="noindent">This is just one example of how to use Docker, but essentially service in this book can somehow interact with Docker—from running batch jobs to running customized Jupyter Notebook data science workflows.</p>
+<h3 id="ch03lev6" class="calibre12">Summary</h3>
+<p class="noindent">Feedback loops are essential to moving past the laboratory mentality of data science in organizations. In a way, data science as a term may be the wrong way to classify solving ML problems in an organization. Pragmatically solving AI problems involves looking at the results more than the technique. Ultimately, spending months on selecting the best ML algorithm for something that never makes it to production is just an exercise in futility and a waste of money.</p>
+<p class="noindent">One way to ship more ML to production is to quit working so hard. Using off-the-shelf solutions from cloud providers is a powerful technique to accomplish this. Moving past “hero-driven development” and moving into an organizational behavior that encourages business continuity and shipping solutions is good for everyone: good for individual contributors, good for the business, and good for the dawn of AI.</p>
+</body></html>

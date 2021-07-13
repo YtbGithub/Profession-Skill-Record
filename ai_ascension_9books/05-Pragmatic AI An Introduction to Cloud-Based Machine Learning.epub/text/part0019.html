@@ -1,0 +1,668 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:ns="http://www.w3.org/2001/10/synthesis" xml:lang="en-us" lang="en-us">
+  <head>
+    <title>8 Finding Project Management Insights from a GitHub Organization</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+  <body class="calibre">
+<h2 class="h1" id="ch08"><span epub:type="pagebreak" id="page_147" class="calibre2"></span>8</h2>
+<h2 class="h2a">Finding Project Management Insights from a GitHub Organization</h2>
+<p class="blockquote"><em class="calibre5">Jiu Jitsu is perfect. It’s humans who make errors.</em></p>
+<p class="attribution">Rickson Gracie</p>
+<p class="noindent">This chapter covers two fascinating problems: how to use data science to investigate project management around software engineering and how to publish a data science tool to the Python Package Index. Data science as a discipline is exploding, and there are many articles on the ins and outs of what algorithm to use, but there are few articles about how to collect data, create a project structure, and then ultimately publish your software to the Python Package Index. This chapter aims to solve this issue with hands-on explicit instructions on both topics. The source code for this can be found on GitHub: <a href="https://github.com/noahgift/devml" class="calibre7">https://github.com/noahgift/devml</a>.</p>
+<h3 id="ch08lev1" class="calibre12">Overview of the Problems in Software Project Management</h3>
+<p class="noindent">Despite the fact that the software industry has been around for decades, it is still plagued by lingering issues of late delivery and poor quality. Further problems lie in evaluating the performance of teams and individual developers. Often the software industry is at the forefront of new technological changes to work relationships. A current trend in the software industry is to use freelance employees or contract teams to supplement or replace some parts of the development of software. This then brings up an obvious problem: How can a company evaluate this talent?</p>
+<p class="noindent">Further, motivated professional software developers want to find a way to get better. What patterns can they emulate from the best software developers in the world? Fortunately, developers <span epub:type="pagebreak" id="page_148"></span>do create behavioral logs that can create signals that can be used to help answer these questions. Every time a developer does a commit to a repository, he is creating a signal.</p>
+<p class="noindent">It only takes minutes of a discussion about analyzing source code metadata for a clever developer to say, “Oh, this doesn’t mean anything, I can just game the system.” This is a fair point to consider, and it is not hard to visually look at a developer’s GitHub profile and see something truly heroic, like 3,000 commits in a year, which equates to around 10 commits a day, every day. In looking further, these commits maybe an automated script that someone created to make her profile look busy, or they could be “fake” commits that add a line to a README file.</p>
+<p class="noindent">The counterpoint to this argument is that the same could be said for math exams: “Oh, you can just cheat on those, that is easy.” Measuring a student’s performance or measuring a worker’s performance can absolutely be gamed, but this doesn’t mean everyone should automatically be given an A grade in Calculus or that exams and quizzes should be gotten rid of. Instead, thinking like a true data scientist, this just makes the problem more fun to solve. Ways to remove fake data and noise will need to be considered to accurately measure the performance of teams and developers.</p>
+<h4 id="ch08lev1sub1" class="calibre16">Exploratory Questions to Consider</h4>
+<p class="noindent">Here is a partial list of initial questions to consider.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet">What are characteristics of a good software developer?</p></li>
+<li class="calibre14"><p class="bullet">What are characteristics of an inexperienced or poor software developer?</p></li>
+<li class="calibre14"><p class="bullet">What are the characteristics of a good software team?</p></li>
+<li class="calibre14"><p class="bullet">Are there signals that can predict faulty software?</p></li>
+<li class="calibre14"><p class="bullet">Can a manager of a software project be given a signal that allows him to take immediate correct active to turn around a troubled software project?</p></li>
+<li class="calibre14"><p class="bullet">Is there a difference between looking at open-source and closed-source projects?</p></li>
+<li class="calibre14"><p class="bullet">Are there signals that predict a developer who is “gaming” the system?</p></li>
+<li class="calibre14"><p class="bullet">What are the signals that, across all software languages, predict good developers?</p></li>
+<li class="calibre14"><p class="bullet">What are the signals across a project in a specific language?</p></li>
+<li class="calibre14"><p class="bullet">How can you measure an apples-to-apples comparison of what the best developers are doing since each repo is spread all over the place? It is easy to “hide.”</p></li>
+<li class="calibre14"><p class="bullet">How can you find developers at your company and in GitHub who are like your best developers?</p></li>
+<li class="calibre14"><p class="bullet">Do you have “flakes,” i.e., people who are not reliable? One of the ways to determine this is the probability that a given developer is committing code Monday through Friday. Some of the research I have found in the past several years is poor developers often have large gaps and/or frequent gaps in committing. The best developers—say, a developer with 10–20 years’ experience—are often committing code at about 80 to 90 percent of the time on a Monday through Friday (even when they are tutoring or helping people).</p></li>
+<li class="calibre14"><p class="bullet"><span epub:type="pagebreak" id="page_149"></span>Is there a problem with a new project manager, manager, or CEO that is destroying the productivity of developers through endless hours of meetings?</p></li>
+<li class="calibre14"><p class="bullet">Do you have a “bad” unicorn developer? Someone who incredibly prolific…at making code that is unreliable?</p></li>
+</ul>
+<h3 id="ch08lev2" class="calibre12">Creating an Initial Data Science Project Skeleton</h3>
+<p class="noindent">An often-overlooked part of developing a new data science solution is the initial structure of the project. Before work is started, a best practice is to create a layout that will facilitate high-quality work and a logical organization. There are probably quite a few ways to lay out a project structure, but this is one recommendation. You can see the exact output of an <code class="calibre11">ls</code> command in <a href="part0019.html#ch8list1" class="calibre7">Listing 8.1</a> and a description of the purpose of each item below.</p>
+<ul class="calibre13">
+<li class="calibre14"><p class="bullet"><span class="empstrong">.circleci directory:</span> This holds the configuration necessary to build the project using CircleCI SaaS build service. There are many similar services that work with open-source software. Alternately, an open-source tool like Jenkins could be used.</p></li>
+<li class="calibre14"><p class="bullet">.<span class="empstrong">gitignore:</span> It is very important to ignore files that are not part of the project. This is a common misstep.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">CODE_OF_CONDUCT.md:</span> It’s a good idea to put in your project some information about how you expect contributors to behave.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">CONTRIBUTING.MD:</span> Explicit instructions about how you will accept contributions is very helpful in recruiting help and avoiding potentially turning away valuable contributors.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">LICENSE:</span> Having a license such as MIT or BSD is helpful. In some cases, a company may not be able to contribute if you don’t have a license.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">Makefile:</span> A Makefile is a common standard for building projects that has been around for decades. It is a great tool for running tests and deploying and setting up an environment.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">README.md:</span> A good README.md should answer basic questions like how a user builds the project and what the project does. Additionally, it can often be helpful to include “badges” that show the quality of the project, such as a passing build—that is, <code class="calibre11">[![CircleCI] (<a href="https://circleci.com/gh/noahgift/devml.svg?style=svg" class="calibre7">https://circleci.com/gh/noahgift/devml.svg?style=svg</a>)].</code> (See <a href="https://circleci.com/gh/noahgift/devml" class="calibre7">https://circleci.com/gh/noahgift/devml</a>.)</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">Command-line tool:</span> In this example, there is a <code class="calibre11">dml</code> command-line tool. Having a cli interface is very helpful in both exploring your library and creating an interface for testing.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">Library directory with a __init__.py:</span> At the root of a project, a library directory should be created with a __init__.py to indicate it is importable. In this example, the library is called devml.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">ext directory:</span> This is a good place for things like a config.json or a config.yml file. It is much better to put non-code in a place where it can be centrally referred to. A data subdirectory might be necessary as well to create some local, truncated samples to explore.</p></li>
+<li class="calibre14"><p class="bullet"><span epub:type="pagebreak" id="page_150"></span><span class="empstrong">notebooks directory:</span> A specific folder for holding Jupyter Notebooks makes it easy to centralize the development of notebook-related code. Additionally, it makes setting up automated testing of notebooks easier.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">requirements.txt:</span> This file holds a list of packages necessary for the project.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">setup.py:</span> This configuration file sets up the way a Python package is deployed. This can also be used to deploy to the Python Package Index.</p></li>
+<li class="calibre14"><p class="bullet"><span class="empstrong">tests directory:</span> This is a directory where tests can be placed.</p></li>
+</ul>
+<div class="side-exe">
+<p class="ex-caption"><a id="ch8list1" class="calibre20"></a><span class="calibre3">Listing 8.1</span> <strong class="calibre3">Project Structure</strong></p>
+<p class="codelink"><a id="p150pro01" href="part0037_split_000.html#p150pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="hr"></p>
+<p class="pre">(.devml) →  devml git:(master) ✗  ls -la<br class="calibre9"/>
+drwxr-xr-x   3 noahgift  staff     96 Oct 14 15:22 .circleci<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff   1241 Oct 21 13:38 .gitignore<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff   3216 Oct 15 11:44 CODE_OF_CONDUCT.md<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff    357 Oct 15 11:44 CONTRIBUTING.md<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff   1066 Oct 14 14:10 LICENSE<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff    464 Oct 21 14:17 Makefile<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff  13015 Oct 21 19:59 README.md<br class="calibre9"/>
+-rwxr-xr-x   1 noahgift  staff   9326 Oct 21 11:53 dml<br class="calibre9"/>
+drwxr-xr-x   4 noahgift  staff    128 Oct 20 15:20 ext<br class="calibre9"/>
+drwxr-xr-x   7 noahgift  staff    224 Oct 22 11:25 notebooks<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff    117 Oct 18 19:16 requirements.txt<br class="calibre9"/>
+-rw-r--r--   1 noahgift  staff   1197 Oct 21 14:07 setup.py<br class="calibre9"/>
+drwxr-xr-x  12 noahgift  staff    384 Oct 18 10:46 tests</p>
+</div>
+<h3 id="ch08lev3" class="calibre12">Collecting and Transforming the Data</h3>
+<p class="noindent">As usual, the worst part of the problem is figuring out how to collect and transform the data into something useful. There are several parts of this problem to solve. The first is how to collect a single repository and create a Pandas DataFrame from it. In order to do this, a new module is created inside the devml directory, called mkdata.py, to address the issues around converting a Git repository’s metadata to a Pandas DataFrame.</p>
+<p class="noindent">A selected portion of the module can be found in its entirety here: <a href="https://github.com/noahgift/devml/blob/master/devml/mkdata.py" class="calibre7">https://github.com/noahgift/devml/blob/master/devml/mkdata.py</a>. The log_to_dict function takes a path to a single Git checkout on disk and then converts the output of a Git command.</p>
+<p class="codelink"><a id="p150pro02" href="part0037_split_001.html#p150pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def log_to_dict(path):<br class="calibre9"/>
+    """Converts Git Log To A Python Dict"""<br class="calibre9"/>
+    <br class="calibre9"/>
+    os.chdir(path) #change directory to process git log<br class="calibre9"/>
+    repo_name = generate_repo_name()<br class="calibre9"/>
+    p = Popen(GIT_LOG_CMD, shell=True, stdout=PIPE)<br class="calibre9"/>
+    (git_log, _) = p.communicate()<br class="calibre9"/>
+    try:<br class="calibre9"/>
+        git_log = git_log.decode('utf8').\<br class="calibre9"/>
+        strip('\n\x1e').split("\x1e")<br class="calibre9"/>
+    except UnicodeDecodeError:<br class="calibre9"/>
+        log.exception("utf8 encoding is incorrect,<br class="calibre9"/>
+         trying ISO-8859-1")<br class="calibre9"/>
+        git_log = git_log.decode('ISO-8859-1').\<br class="calibre9"/>
+        strip('\n\x1e').split("\x1e")<br class="calibre9"/>
+        <br class="calibre9"/>
+    git_log = [row.strip().split("\x1f") for row in git_log]<br class="calibre9"/>
+    git_log = [dict(list(zip(GIT_COMMIT_FIELDS, row)))\<br class="calibre9"/>
+         for row in git_log]<br class="calibre9"/>
+    for dictionary in git_log:<br class="calibre9"/>
+        dictionary["repo"]=repo_name<br class="calibre9"/>
+    repo_msg = "Found %s Messages For Repo: %s" %\<br class="calibre9"/>
+         (len(git_log), repo_name)<br class="calibre9"/>
+    log.info(repo_msg)<br class="calibre9"/>
+    return git_log</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_151"></span>Finally, in the next two functions, a path on disk is used to call the function above. Note that logs are stored as items in a list, and then this is used to create a DataFrame in Pandas.</p>
+<p class="codelink"><a id="p151pro01" href="part0037_split_002.html#p151pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def create_org_df(path):<br class="calibre9"/>
+    """Returns a Pandas Dataframe of an Org"""<br class="calibre9"/>
+<br class="calibre9"/>
+    original_cwd = os.getcwd()<br class="calibre9"/>
+    logs = create_org_logs(path)<br class="calibre9"/>
+    org_df = pd.DataFrame.from_dict(logs)<br class="calibre9"/>
+    #convert date to datetime format<br class="calibre9"/>
+    datetime_converted_df = convert_datetime(org_df)<br class="calibre9"/>
+    #Add A Date Index<br class="calibre9"/>
+    converted_df = date_index(datetime_converted_df)<br class="calibre9"/>
+    new_cwd = os.getcwd()<br class="calibre9"/>
+    cd_msg = "Changing back to original cwd: %s from %s" %\<br class="calibre9"/>
+         (original_cwd, new_cwd)<br class="calibre9"/>
+    log.info(cd_msg)<br class="calibre9"/>
+    os.chdir(original_cwd)<br class="calibre9"/>
+    return converted_df<br class="calibre9"/>
+<br class="calibre9"/>
+def create_org_logs(path):<br class="calibre9"/>
+    """Iterate through all paths in current working directory,<br class="calibre9"/>
+    make log dict"""<br class="calibre9"/>
+<br class="calibre9"/>
+    combined_log = []<br class="calibre9"/>
+    for sdir in subdirs(path):<br class="calibre9"/>
+        repo_msg = "Processing Repo: %s" % sdir<br class="calibre9"/>
+        log.info(repo_msg)<br class="calibre9"/>
+        combined_log += log_to_dict(sdir)<br class="calibre9"/>
+    log_entry_msg = "Found a total log entries: %s" %\<br class="calibre9"/>
+        len(combined_log)<br class="calibre9"/>
+    log.info(log_entry_msg)<br class="calibre9"/>
+    return combined_log</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_152"></span>In action, the code looks like this when run without collecting into a DataFrame.</p>
+<p class="codelink"><a id="p152pro01" href="part0037_split_003.html#p152pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [5]: res = create_org_logs("/Users/noahgift/src/flask")<br class="calibre9"/>
+2017-10-22 17:36:02,380 - devml.mkdata - INFO - Found repo:\<br class="calibre9"/>
+  /Users/noahgift/src/flask/flask<br class="calibre9"/>
+In [11]: res[0]<br class="calibre9"/>
+Out[11]:<br class="calibre9"/>
+{'author_email': 'rgerganov@gmail.com',<br class="calibre9"/>
+ 'author_name': 'Radoslav Gerganov',<br class="calibre9"/>
+ 'date': 'Fri Oct 13 04:53:50 2017',<br class="calibre9"/>
+ 'id': '9291ead32e2fc8b13cef825186c968944e9ff344',<br class="calibre9"/>
+ 'message': 'Fix typo in logging.rst (#2492)',<br class="calibre9"/>
+ 'repo': b'flask'}</p>
+<p class="noindent">The second section that makes the DataFrame looks like this.</p>
+<p class="codelink"><a id="p152pro02" href="part0037_split_004.html#p152pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">res = create_org_df("/Users/noahgift/src/flask")<br class="calibre9"/>
+In [14]: res.describe()<br class="calibre9"/>
+Out[14]:<br class="calibre9"/>
+       commits<br class="calibre9"/>
+count   9552.0<br class="calibre9"/>
+mean       1.0<br class="calibre9"/>
+std        0.0<br class="calibre9"/>
+min        1.0<br class="calibre9"/>
+25%        1.0<br class="calibre9"/>
+50%        1.0<br class="calibre9"/>
+75%        1.0<br class="calibre9"/>
+max        1.0</p>
+<p class="noindent">At a high level, this is a pattern to get ad hoc data from a third party like a Git log. To dig into this in more detail, it would be a good idea to look at the source code in its entirety.</p>
+<h3 id="ch08lev4" class="calibre12">Talking to an Entire GitHub Organization</h3>
+<p class="noindent">With the code in place that transforms Git repositories on disk into DataFrames in place, a natural next step is to collect multiple repositories, that is, all of the repositories for an organization. One of the key issues in analyzing just one repository is that it is an incomplete portion of the data to analyze in the context of a company. One way to fix this is to talk to the GitHub API and programmatically pull down the repositories. The entire source for this can be found here: <a href="https://github.com/noahgift/devml/blob/master/devml/fetch_repo.py" class="calibre7">https://github.com/noahgift/devml/blob/master/devml/fetch_repo.py</a>. The highlights are</p>
+<p class="codelink"><a id="p152pro03" href="part0037_split_005.html#p152pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def clone_org_repos(oath_token, org, dest, branch="master"):<br class="calibre9"/>
+    """Clone All Organizations Repositories and Return Instances of Repos.<br class="calibre9"/>
+    """<br class="calibre9"/>
+    <br class="calibre9"/>
+    if not validate_checkout_root(dest):<br class="calibre9"/>
+        return False<br class="calibre9"/>
+<br class="calibre9"/>
+    repo_instances = []<br class="calibre9"/>
+    repos = org_repo_names(oath_token, org)<br class="calibre9"/>
+    count = 0<br class="calibre9"/>
+    for name, url in list(repos.items()):<br class="calibre9"/>
+        count += 1<br class="calibre9"/>
+        log_msg = "Cloning Repo # %s REPO NAME: %s , URL: %s " %\<br class="calibre9"/>
+                         (count, name, url)<br class="calibre9"/>
+        log.info(log_msg)<br class="calibre9"/>
+        try:<br class="calibre9"/>
+            repo = clone_remote_repo(name, url, dest, branch=branch)<br class="calibre9"/>
+            repo_instances.append(repo)<br class="calibre9"/>
+        except GitCommandError:<br class="calibre9"/>
+            log.exception("NO MASTER BRANCH...SKIPPING")<br class="calibre9"/>
+    return repo_instances</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_153"></span>Both the PyGithub and the gitpython packages are used to do much of the heavy lifting. When this code is run, it iteratively finds each repo from the API, then clones it. The previous code can then be used to create a combined DataFrame.</p>
+<h3 id="ch08lev5" class="calibre12">Creating Domain-specific Stats</h3>
+<p class="noindent">All of this work was done for one reason: to explore the data collected and to create domain-specific stats. To do that, a stats.py file is created; you can see the entire contents here:  <a href="https://github.com/noahgift/devml/blob/master/devml/stats.py" class="calibre7">https://github.com/noahgift/devml/blob/master/devml/stats.py</a>.</p>
+<p class="noindent">The most relevant portion to show is a function called <code class="calibre11">author_unique_active_days.</code> This function determines how many days a developer was active for the records in the DataFrame. This is a unique, domain-specific statistic that is rarely mentioned in discussions about statistics about source code repositories.</p>
+<p class="noindent">The main function is shown below.</p>
+<p class="codelink"><a id="p153pro01" href="part0037_split_006.html#p153pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">def author_unique_active_days(df, sort_by="active_days"):<br class="calibre9"/>
+    """DataFrame of Unique Active Days<br class="calibre9"/>
+        by Author With Descending Order<br class="calibre9"/>
+    <br class="calibre9"/>
+    author_name	unique_days	<br class="calibre9"/>
+    46	Armin Ronacher	271<br class="calibre9"/>
+    260	Markus Unterwaditzer	145<br class="calibre9"/>
+    """<br class="calibre9"/>
+<br class="calibre9"/>
+    author_list = []<br class="calibre9"/>
+    count_list = []<br class="calibre9"/>
+    duration_active_list = []<br class="calibre9"/>
+    ad = author_active_days(df)<br class="calibre9"/>
+    for author in ad.index:<br class="calibre9"/>
+        author_list.append(author)<br class="calibre9"/>
+        vals = ad.loc[author]<br class="calibre9"/>
+        vals.dropna(inplace=True)<br class="calibre9"/>
+        vals.drop_duplicates(inplace=True)<br class="calibre9"/>
+        vals.sort_values(axis=0,inplace=True)<br class="calibre9"/>
+        vals.reset_index(drop=True, inplace=True)<br class="calibre9"/>
+        count_list.append(vals.count())<br class="calibre9"/>
+        duration_active_list.append(vals[len(vals)-1]-vals[0])<br class="calibre9"/>
+    df_author_ud = DataFrame()  <br class="calibre9"/>
+    df_author_ud["author_name"] = author_list<br class="calibre9"/>
+    df_author_ud["active_days"] = count_list<br class="calibre9"/>
+    df_author_ud["active_duration"] = duration_active_list<br class="calibre9"/>
+    df_author_ud["active_ratio"] = \<br class="calibre9"/>
+        round(df_author_ud["active_days"]/\<br class="calibre9"/>
+        df_author_ud["active_duration"].dt.days, 2)<br class="calibre9"/>
+    df_author_ud = df_author_ud.iloc[1:] #first row is =<br class="calibre9"/>
+    df_author_ud = df_author_ud.sort_values(\<br class="calibre9"/>
+        by=sort_by, ascending=False)<br class="calibre9"/>
+    return df_author_ud</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_154"></span>When it is used from IPython, it generates the following output.</p>
+<p class="codelink"><a id="p154pro01" href="part0037_split_007.html#p154pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [18]: from devml.stats import author_unique_active_days<br class="calibre9"/>
+<br class="calibre9"/>
+In [19]: active_days = author_unique_active_days(df)<br class="calibre9"/>
+<br class="calibre9"/>
+In [20]: active_days.head()<br class="calibre9"/>
+Out[20]:<br class="calibre9"/>
+              author_name  active_days active_duration  active_ratio<br class="calibre9"/>
+46         Armin Ronacher          241       2490 days          0.10<br class="calibre9"/>
+260  Markus Unterwaditzer           71       1672 days          0.04<br class="calibre9"/>
+119            David Lord           58        710 days          0.08<br class="calibre9"/>
+352           Ron DuPlain           47        785 days          0.06<br class="calibre9"/>
+107     Daniel Neuhäuser           19        435 days          0.04</p>
+<p class="noindent">The statistics create a ratio, called the <code class="calibre11">active_ratio</code>, which is the percentage of time from the start to the last time they worked on the project for which they were actively committing code. One of the interesting things about a metric like this is it does show engagement, and with the best open-source developers there are some fascinating parallels. In the next section, these core components will be hooked into a command-line tool and two different open-source projects will be compared using the code that was created.</p>
+<h3 id="ch08lev6" class="calibre12">Wiring a Data Science Project into a CLI</h3>
+<p class="noindent">In the first part of this chapter, the components were created to get to the point at which an analysis could be run. In this section, they will be wired into a flexible command-line tool that uses the click framework. The entire source code for dml is found here: <a href="https://github.com/noahgift/devml/blob/master/dml" class="calibre7">https://github.com/noahgift/devml/blob/master/dml</a>. The pieces that are important are shown below.</p>
+<p class="noindent">First the library is imported along with the click framework.</p>
+<p class="codelink"><a id="p154pro02" href="part0037_split_008.html#p154pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">#!/usr/bin/env python<br class="calibre9"/>
+import os<br class="calibre9"/>
+<br class="calibre9"/>
+import click<br class="calibre9"/>
+<br class="calibre9"/>
+from devml import state<br class="calibre9"/>
+from devml import fetch_repo<br class="calibre9"/>
+from devml import __version__<br class="calibre9"/>
+from devml import mkdata<br class="calibre9"/>
+from devml import stats<br class="calibre9"/>
+from devml import org_stats<br class="calibre9"/>
+from devml import post_processing</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_155"></span>Then the previous code is wired in, and it only takes a couple of lines to hook it into the tool.</p>
+<p class="codelink"><a id="p155pro01" href="part0037_split_009.html#p155pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">@gstats.command("activity")<br class="calibre9"/>
+@click.option("--path", default=CHECKOUT_DIR, help="path to org")<br class="calibre9"/>
+@click.option("--sort", default="active_days",<br class="calibre9"/>
+    help="can sort by:  active_days, active_ratio, active_duration")<br class="calibre9"/>
+def activity(path, sort):<br class="calibre9"/>
+    """Creates Activity Stats<br class="calibre9"/>
+<br class="calibre9"/>
+    Example is run after checkout:<br class="calibre9"/>
+    python dml.py gstats activity –path\<br class="calibre9"/>
+         /Users/noah/src/wulio/checkout<br class="calibre9"/>
+    """<br class="calibre9"/>
+<br class="calibre9"/>
+    org_df = mkdata.create_org_df(path)<br class="calibre9"/>
+    activity_counts = stats.author_unique_active_days(\<br class="calibre9"/>
+        org_df, sort_by=sort)<br class="calibre9"/>
+    click.echo(activity_counts)</p>
+<p class="noindent">To use this tool, it looks like this from the command line.</p>
+<p class="codelink"><a id="p155pro02" href="part0037_split_010.html#p155pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre"># Linux Development Active Ratio<br class="calibre9"/>
+dml gstats activity --path /Users/noahgift/src/linux\<br class="calibre9"/>
+  --sort active_days<br class="calibre9"/>
+<br class="calibre9"/>
+author_name  active_days active_duration  active_ratio<br class="calibre9"/>
+Takashi Iwai         1677       4590 days      0.370000<br class="calibre9"/>
+Eric Dumazet         1460       4504 days      0.320000<br class="calibre9"/>
+David S. Miller         1428       4513 days      0.320000<br class="calibre9"/>
+Johannes Berg         1329       4328 days      0.310000<br class="calibre9"/>
+Linus Torvalds         1281       4565 days      0.280000<br class="calibre9"/>
+Al Viro         1249       4562 days      0.270000<br class="calibre9"/>
+Mauro Carvalho Chehab         1227       4464 days      0.270000<br class="calibre9"/>
+Mark Brown         1198       4187 days      0.290000<br class="calibre9"/>
+Dan Carpenter         1158       3972 days      0.290000<br class="calibre9"/>
+Russell King         1141       4602 days      0.250000<br class="calibre9"/>
+Axel Lin         1040       2720 days      0.380000<br class="calibre9"/>
+Alex Deucher         1036       3497 days      0.300000<br class="calibre9"/>
+<br class="calibre9"/>
+<br class="calibre9"/>
+# CPython Development Active Ratio<br class="calibre9"/>
+<br class="calibre9"/>
+            author_name  active_days active_duration  active_ratio<br class="calibre9"/>
+146    Guido van Rossum         2256       9673 days      0.230000<br class="calibre9"/>
+301   Raymond Hettinger         1361       5635 days      0.240000<br class="calibre9"/>
+128          Fred Drake         1239       5335 days      0.230000<br class="calibre9"/>
+47    Benjamin Peterson         1234       3494 days      0.350000<br class="calibre9"/>
+132        Georg Brandl         1080       4091 days      0.260000<br class="calibre9"/>
+375      Victor Stinner          980       2818 days      0.350000<br class="calibre9"/>
+235     Martin v. Löwis          958       5266 days      0.180000<br class="calibre9"/>
+36       Antoine Pitrou          883       3376 days      0.260000<br class="calibre9"/>
+362          Tim Peters          869       5060 days      0.170000<br class="calibre9"/>
+164         Jack Jansen          800       4998 days      0.160000<br class="calibre9"/>
+24   Andrew M. Kuchling          743       4632 days      0.160000<br class="calibre9"/>
+330    Serhiy Storchaka          720       1759 days      0.410000<br class="calibre9"/>
+44         Barry Warsaw          696       8485 days      0.080000<br class="calibre9"/>
+52         Brett Cannon          681       5278 days      0.130000<br class="calibre9"/>
+262        Neal Norwitz          559       2573 days      0.220000</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_156"></span>In this analysis, Guido of Python has a 23-percent probability of working on a given day, and “Linus” of Linux has a 28-percent chance. What is fascinating about this particular form of analysis is that it shows behavior over a long period of time. In the case of CPython, many of these authors also had full-time jobs, so the output is even more incredible to observe. Another analysis that would be fascinating is to look at the history of developers at a company (combining all of the available repositories). I have noticed that in some cases very senior developers can output code at around an 85-percent active ratio if they are fully employed.</p>
+<h3 id="ch08lev7" class="calibre12">Using Jupyter Notebook to Explore a GitHub Organization</h3>
+<h4 id="ch08lev7sub1" class="calibre16">Pallets GitHub Project</h4>
+<p class="noindent">One of the issues with looking at a single repository is that it is only part of the data. The earlier code created the ability to clone an entire organization and analyze it. A popular GitHub organization is the Pallets Projects (<a href="https://github.com/pallets" class="calibre7">https://github.com/pallets</a>). It has multiple popular projects like click and Flask. The Jupyter Notebook for this analysis can be found here: <a href="https://github.com/noahgift/devml/blob/master/notebooks/github_data_exploration.ipynb" class="calibre7">https://github.com/noahgift/devml/blob/master/notebooks/github_data_exploration.ipynb</a>.</p>
+<p class="noindent">To start Jupyter, from the command-line type in “jupyter notebook”. Then import libraries that will be used.</p>
+<p class="codelink"><a id="p156pro01" href="part0037_split_012.html#p156pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [3]: import sys;sys.path.append("..")<br class="calibre9"/>
+   ...: import pandas as pd<br class="calibre9"/>
+   ...: from pandas import DataFrame<br class="calibre9"/>
+   ...: import seaborn as sns<br class="calibre9"/>
+   ...: import matplotlib.pyplot as plt<br class="calibre9"/>
+   ...: from sklearn.cluster import KMeans<br class="calibre9"/>
+   ...: %matplotlib inline<br class="calibre9"/>
+   ...: from IPython.core.display import display, HTML<br class="calibre9"/>
+   ...: display(HTML("&lt;style&gt;.container {\<br class="calibre9"/>
+ width:100% !important; }&lt;/style&gt;"))</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_157"></span>Next, the code to download an organization is used.</p>
+<p class="codelink"><a id="p156pro01zz" href="part0037_split_013.html#p156pro01z" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [4]: from devml import (mkdata, stats, state, fetch_repo, ts)<br class="calibre9"/>
+<br class="calibre9"/>
+In [5]: dest, token, org = state.get_project_metadata(\<br class="calibre9"/>
+        "../project/config.json")<br class="calibre9"/>
+<br class="calibre9"/>
+In [6]: fetch_repo.clone_org_repos(token, org,<br class="calibre9"/>
+   ...:         dest, branch="master")<br class="calibre9"/>
+<br class="calibre9"/>
+Out[6]:<br class="calibre9"/>
+[&lt;git.Repo "/tmp/checkout/flask/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/pallets-sphinx-themes/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/markupsafe/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/jinja/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/werkzeug/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/itsdangerous/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/flask-website/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/click/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/flask-snippets/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/flask-docs/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/flask-ext-migrate/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/pocoo-sphinx-themes/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/website/.git"&gt;,<br class="calibre9"/>
+ &lt;git.Repo "/tmp/checkout/meta/.git"&gt;]</p>
+<p class="noindent">With the code living on disk, it can be converted into a Pandas DataFrame.</p>
+<p class="codelink"><a id="p157pro01" href="part0037_split_014.html#p157pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [7]: df = mkdata.create_org_df(path="/tmp/checkout")<br class="calibre9"/>
+In [9]: df.describe()<br class="calibre9"/>
+Out[9]:<br class="calibre9"/>
+       commits<br class="calibre9"/>
+count   8315.0<br class="calibre9"/>
+mean       1.0<br class="calibre9"/>
+std        0.0<br class="calibre9"/>
+min        1.0<br class="calibre9"/>
+25%        1.0<br class="calibre9"/>
+50%        1.0<br class="calibre9"/>
+75%        1.0<br class="calibre9"/>
+max        1.0</p>
+<p class="noindent">Next, active days can be calculated.</p>
+<p class="codelink"><a id="p157pro02" href="part0037_split_015.html#p157pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [10]: df_author_ud = stats.author_unique_active_days(df)<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+In [11]: df_author_ud.head(10)<br class="calibre9"/>
+Out[11]:<br class="calibre9"/>
+              author_name  active_days active_duration  active_ratio<br class="calibre9"/>
+86         Armin Ronacher          941       3817 days          0.25<br class="calibre9"/>
+499  Markus Unterwaditzer          238       1767 days          0.13<br class="calibre9"/>
+216            David Lord           94        710 days          0.13<br class="calibre9"/>
+663           Ron DuPlain           56        854 days          0.07<br class="calibre9"/>
+297          Georg Brandl           41       1337 days          0.03<br class="calibre9"/>
+196     Daniel Neuhäuser           36        435 days           0.08<br class="calibre9"/>
+169     Christopher Grebs           27       1515 days          0.02<br class="calibre9"/>
+665    Ronny Pfannschmidt           23       2913 days          0.01<br class="calibre9"/>
+448      Keyan Pishdadian           21        882 days          0.02<br class="calibre9"/>
+712           Simon Sapin           21        793 days          0.03</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_158"></span>Finally, this can be turned into a Seaborn plot by using sns.barplot, as shown in <a href="part0019.html#ch8fig1" class="calibre7">Figure 8.1</a>, to plot the top 10 contributors to the organization by days they are active in the project, that is, days they actually checked in code. It is no surprise the main author of the many of the projects is almost three times more active than any other contributor.</p>
+<p class="noindent">Perhaps some similar observations could be extrapolated for closed-source projects across all the repositories in a company. Active days could be a useful metric to show engagement, and it could be part of many metrics used to measure the effectiveness of teams and projects.</p>
+<div class="figure">
+<div class="image"><a id="ch8fig1" class="calibre7"></a><img src="../images/00043.jpeg" aria-describedby="alt_08fig01" alt="A screenshot displays Seaborn Active-Days Plot." class="calibre8"/>
+<aside class="hidden" id="alt_08fig01" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The screen shows the Input filed, In [9] that reads, sns.barplot (y=”author_name” , x=”active_days” , data=df_author_ud.head(10)). The Output filed, Out [9] reads, &lt;matplotlib.axes._subplots.AxesSubplot at 0x116dbc5f8&gt;. A horizontal bar graph is shown below. The horizontal axis represents active_days ranging from 0 to 1000 in increments of 200. The vertical axis represents the different team names. The bars in the graph from bottom to top are shown gradually increasing (horizontally). The graph infers the following data (from top to bottom): Armin Ronacher (941), Markus Unterwaditzer (238), David Lord (94), Ron DuPlain (56), Georg Brandl (41), Daniel Neuhä user (36), Christopher Grebs (27), Ronny Pfannschmidt (23), Keyan Pishdadian (21), and Simon Sapin (21), respectively.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 8.1</span> Seaborn Active-Days Plot</p>
+</div>
+<h3 id="ch08lev8" class="calibre12">Looking at File Metadata in the CPython Project</h3>
+<p class="noindent">The next Jupyter Notebook we’ll examine is an exploration of the metadata around the CPython project found here: <a href="https://github.com/noahgift/devml/blob/master/notebooks/repo_file_exploration.ipynb" class="calibre7">https://github.com/noahgift/devml/blob/master/notebooks/repo_file_exploration.ipynb</a>. The CPython project can be found here: <a href="https://github.com/python/cpython" class="calibre7">https://github.com/python/cpython</a>, and it is the repository used to develop the Python language.</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_159"></span>One of the metrics that will be generated is called relative churn, and it can be read about more in this paper from Microsoft Research: <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/icse05churn.pdf" class="calibre7">https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/icse05churn.pdf</a>. It states that “an increase in relative code churn measures is accompanied by an increase in system defect density.” This can be extrapolated into meaning that too many changes in a file predict defect.</p>
+<p class="noindent">This new notebook will again import the modules needed for the rest of the exploration.</p>
+<p class="codelink"><a id="p159pro01" href="part0037_split_016.html#p159pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [1]: import sys;sys.path.append("..")<br class="calibre9"/>
+   ...: import pandas as pd<br class="calibre9"/>
+   ...: from pandas import DataFrame<br class="calibre9"/>
+   ...: import seaborn as sns<br class="calibre9"/>
+   ...: import matplotlib.pyplot as plt<br class="calibre9"/>
+   ...: from sklearn.cluster import KMeans<br class="calibre9"/>
+   ...: %matplotlib inline<br class="calibre9"/>
+   ...: from IPython.core.display import display, HTML<br class="calibre9"/>
+   ...: display(HTML("&lt;style&gt;.container \<br class="calibre9"/>
+{ width:100% !important; }&lt;/style&gt;"))</p>
+<p class="noindent">Next, churn metrics will be generated.</p>
+<p class="codelink"><a id="p159pro01zz" href="part0037_split_017.html#p159pro01z" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [2]: from devml.post_processing import (<br class="calibre9"/>
+        git_churn_df, file_len, git_populate_file_metadata)<br class="calibre9"/>
+<br class="calibre9"/>
+In [3]: df = git_churn_df(path="/Users/noahgift/src/cpython")<br class="calibre9"/>
+2017-10-23 06:51:00,256 - devml.post_processing - INFO –<br class="calibre9"/>
+         Running churn cmd: [git log --name-only<br class="calibre9"/>
+         --pretty=format:] at path [/Users/noahgift/src/cpython]<br class="calibre9"/>
+<br class="calibre9"/>
+In [4]: df.head()<br class="calibre9"/>
+Out[4]:<br class="calibre9"/>
+                                               files  churn_count<br class="calibre9"/>
+0                         b'Lib/test/test_struct.py'          178<br class="calibre9"/>
+1                      b'Lib/test/test_zipimport.py'           78<br class="calibre9"/>
+2                           b'Misc/NEWS.d/next/Core'          351<br class="calibre9"/>
+3                                             b'and'          351<br class="calibre9"/>
+4  b'Builtins/2017-10-13-20-01-47.bpo-31781.cXE9S...            1</p>
+<p class="noindent">A few filters in Pandas can then be used to figure out the top relative churn files with the Python extension. The output is scene in <a href="part0019.html#ch8fig2" class="calibre7">Figure 8.2</a>.</p>
+<p class="codelink"><a id="p159pro02" href="part0037_split_018.html#p159pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [14]: metadata_df = git_populate_file_metadata(df)<br class="calibre9"/>
+<br class="calibre9"/>
+In [15]: python_files_df =\<br class="calibre9"/>
+  metadata_df[metadata_df.extension == ".py"]<br class="calibre9"/>
+    ...: line_python =\<br class="calibre9"/>
+ python_files_df[python_files_df.line_count&gt; 40]<br class="calibre9"/>
+    ...: line_python.sort_values(<br class="calibre9"/>
+by="relative_churn", ascending=False).head(15)<br class="calibre9"/>
+    ...:</p>
+<div class="figure">
+<div class="image"><span epub:type="pagebreak" id="page_160"></span><a id="ch8fig2" class="calibre7"></a><img src="../images/00044.jpeg" aria-describedby="alt_08fig02" alt="A screenshot displays the Top Relative Churn in CPython .py Files." class="calibre8"/>
+<aside class="hidden" id="alt_08fig02" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The Input, In [22] field reads, python_files_df = metadata_df[metadata_df.extension == ".py"] line_python =\ python_files_df[python_files_df.line_count&gt; 40] line_python.sort_values(by="relative_churn", ascending=False).head(15). The output, Out [22] field shows a table consitsts of 15 rows and 6 columns. The column haeder reads: empty, files, churn_Count, line_count, extension, and relatsive_Churn. Row 1 reads: 15, b’Lin/test/test/regrtest.py’, 627, 50.0, .py, and 12.54. Row 2 reads: 196, b’Lin/test/test_datetime.py’, 165, 57.0, .py, and 2.89. Row 3 reads: 196, b’Lib/io.py’, 165, 99.0, .py, and 1.67. Row 4 reads: 430, b’Lin/test/test_sundry.py’, 91, 56.0, .py, and 1.62. Row 5 reads: 269, b’Lin/test/test_all_.py’, 128, 109.0, .py, and 1.17. Row 6 reads: 1120, b’Lin/test/test_userstring.py’, 40, 44.0, .py, and 0.91. Row 7 reads: 827, b’Lib/email/_init_,py’, 52, 62.0, .py, and 0.84. Row 8 reads: 85, b’Lin/test/test_support.py’, 262, 461.0, .py, and 0.57. Row 9 reads: 1006, b’Lin/test/test_select.py’, 44, 82.0, .py, and 0.54. Row 10 reads: 1474, b’Lib/lib2to3/fixes/fix_itertools_import.py’, 30, 57.0, .py, and 0.53. Row 11 reads: 346, b’Doc/conf.py’, 106, 206.0, .py, and 0.51. Row 12 reads: 222, b’Lib/string.py’, 151, 305.0, .py, and 0.50. Row 13 reads: 804, b’Lin/test/test_normalization.py’, 53, 108.0, .py, and 0.49. Row 14 reads: 592, b’Lin/test/test_fcntl.py’, 68, 152.0, .py, and 0.45. Row 15 reads: b’Lin/test/test_winsound.py’, 67, 148.0, .py, and 0.45.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 8.2</span> Top Relative Churn in CPython .py Files</p>
+</div>
+<p class="noindent">One observation from this query is that tests have a lot of churn, which might be worth exploring more. Does this mean that the tests themselves also contain bugs? That might be fascinating to explore in more detail. Also, there are couple of Python modules that have extremely high relative churn, like the string.py module: <a href="https://github.com/python/cpython/blob/master/Lib/string.py" class="calibre7">https://github.com/python/cpython/blob/master/Lib/string.py</a>.  In looking through the source code for that file, it does look very complex for its size, and it contains metaclasses. It is possible the complexity has made it prone to bugs. This seems like a module worth further data science exploration on.</p>
+<p class="noindent">Next, some descriptive statistics can be run to look for the median values across the project. It shows, for the couple of decades and 100,000-plus commits the project has been around, that a median file is about 146 lines, it is changed 5 times, and it has a relative churn of 10 percent. This leads to a conclusion that the ideal type of file to be created is small and has a few changes over the years.</p>
+<p class="pre">In [16]: metadata_df.median()<br class="calibre9"/>
+Out[16]:<br class="calibre9"/>
+churn_count        5.0<br class="calibre9"/>
+line_count        146.0<br class="calibre9"/>
+relative_churn      0.1<br class="calibre9"/>
+dtype: float64</p>
+<p class="noindent">Generating a Seaborn plot for the relative churn makes the patterns even more clear.</p>
+<p class="codelink"><a id="p160pro02" href="part0037_split_019.html#p160pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [18]: import matplotlib.pyplot as plt<br class="calibre9"/>
+    ...: plt.figure(figsize=(10,10))<br class="calibre9"/>
+    ...: python_files_df =\<br class="calibre9"/>
+ metadata_df[metadata_df.extension == ".py"]<br class="calibre9"/>
+    ...: line_python =\<br class="calibre9"/>
+ python_files_df[python_files_df.line_count&gt; 40]<br class="calibre9"/>
+    ...: line_python_sorted =\<br class="calibre9"/>
+ line_python.sort_values(by="relative_churn",<br class="calibre9"/>
+         ascending=False).head(15)<br class="calibre9"/>
+    ...: sns.barplot(<br class="calibre9"/>
+y="files", x="relative_churn",data=line_python_sorted)<br class="calibre9"/>
+    ...: plt.title('Top 15 CPython Absolute and Relative Churn')<br class="calibre9"/>
+    ...: plt.show()</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_161"></span>In <a href="part0019.html#ch8fig3" class="calibre7">Figure 8.3</a>, the regtest.py module sticks out quite a bit as the most modified file, and again, it makes sense why it is changed so much. Although it is a small file, typically a regression test can be very complicated. This also may be a hot spot in the code that may need to be looked at: <a href="https://github.com/python/cpython/blob/master/Lib/test/regrtest.py" class="calibre7">https://github.com/python/cpython/blob/master/Lib/test/regrtest.py</a>.</p>
+<div class="figure">
+<div class="image"><a id="ch8fig3" class="calibre7"></a><img src="../images/00045.jpeg" aria-describedby="alt_08fig03" alt="A screenshot of the horizontal bar graph represents Top Relative Churn in CPython .py File." class="calibre8"/>
+<aside class="hidden" id="alt_08fig03" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The graph titled “Top 15 Cpython Absolute and Relative Churm.” The horizontal axis represents relative_chum ranging from 0 to 12 in increments of 2. And the vertical axis represents the CPython .py Files. The graph infers the following data (from bottom to top): b’Lin/test/test_winsound.py’ (0.45); b’Lin/test/test_fcntl.py’ (0.45); b’Lin/test/test_normalization.py’ (0.49); b’Lib/string.py’ (0.50); b’Doc/conf.py’ (0.51); b’Lib/lib2to3/fixes/fix_itertools_import.py’ (0.53); b’Lin/test/test_select.py’ (0.54); b’Lin/test/test_support.py’ (0.57); b’Lib/email/_init_,py’ (0.84); b’Lin/test/test_userstring.py’ (0.91); b’Lin/test/test_all_.py’ (1.17); b’Lin/test/test_sundry.py’ (1.62); b’Lib/io.py’ (1.67; b’Lin/test/test_datetime.py’ (2.89); and b’Lin/test/test/regrtest.py’ (12.54), respectively.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 8.3</span> Top Relative Churn in CPython .py File</p>
+</div>
+<h3 id="ch08lev9" class="calibre12">Looking at Deleted Files in the CPython Project</h3>
+<p class="noindent">Another area of exploration is files that were deleted throughout the history of a project. There are many directions of research that could be derived from this exploration, like predicting that a file would later be deleted if, say, the relative churn was too high, etc. To look at the deleted files, another function is first created in the post-processing directory: <a href="https://github.com/noahgift/devml/blob/master/devml/post_processing.py" class="calibre7">https://github.com/noahgift/devml/blob/master/devml/post_processing.py</a>.</p>
+<p class="codelink"><a id="p162pro01" href="part0037_split_020.html#p162pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre"><span epub:type="pagebreak" id="page_162"></span>FILES_DELETED_CMD=\<br class="calibre9"/>
+    'git log --diff-filter=D --summary | grep delete'<br class="calibre9"/>
+<br class="calibre9"/>
+def files_deleted_match(output):<br class="calibre9"/>
+    """Retrieves files from output from subprocess<br class="calibre9"/>
+    <br class="calibre9"/>
+    i.e:<br class="calibre9"/>
+    wcase/templates/hello.html\n delete mode 100644<br class="calibre9"/>
+    Throws away everything but path to file<br class="calibre9"/>
+    """<br class="calibre9"/>
+<br class="calibre9"/>
+    files = []<br class="calibre9"/>
+    integers_match_pattern = '^[-+]?[0-9]+$'<br class="calibre9"/>
+    for line in output.split():<br class="calibre9"/>
+        if line == b"delete":<br class="calibre9"/>
+            continue<br class="calibre9"/>
+        elif line == b"mode":<br class="calibre9"/>
+            continue<br class="calibre9"/>
+        elif re.match(integers_match_pattern, line.decode("utf-8")):<br class="calibre9"/>
+            continue<br class="calibre9"/>
+        else:<br class="calibre9"/>
+            files.append(line)<br class="calibre9"/>
+    return files</p>
+<p class="noindent">This function looks for delete messages in the Git log, does some pattern matching, and extracts the files to a list so a Pandas DataFrame can be created. Next, it can be used in a Jupyter Notebook.</p>
+<p class="codelink"><a id="p162pro02" href="part0037_split_021.html#p162pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [19]: from devml.post_processing import git_deleted_files<br class="calibre9"/>
+    ...: deletion_counts = git_deleted_files(<br class="calibre9"/>
+"/Users/noahgift/src/cpython")</p>
+<p class="noindent">To inspect some of the files that have been deleted, the last few records are viewed.</p>
+<p class="codelink"><a id="p162pro03" href="part0037_split_022.html#p162pro03a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [21]: deletion_counts.tail()<br class="calibre9"/>
+Out[21]:<br class="calibre9"/>
+                           files     ext<br class="calibre9"/>
+8812  b'Mac/mwerks/mwerksglue.c'      .c<br class="calibre9"/>
+8813        b'Modules/version.c'      .c<br class="calibre9"/>
+8814      b'Modules/Setup.irix5'  .irix5<br class="calibre9"/>
+8815      b'Modules/Setup.guido'  .guido<br class="calibre9"/>
+8816      b'Modules/Setup.minix'  .minix</p>
+<p class="noindent">Next, see whether there is a pattern that appears with deleted files versus files that are kept. To do that, the deleted files’ DataFrame will need to be joined.</p>
+<p class="codelink"><a id="p162pro04" href="part0037_split_023.html#p162pro04a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [22]: all_files = metadata_df['files']<br class="calibre9"/>
+    ...: deleted_files = deletion_counts['files']<br class="calibre9"/>
+    ...: membership = all_files.isin(deleted_files)<br class="calibre9"/>
+    ...:<br class="calibre9"/>
+<br class="calibre9"/>
+In [23]: metadata_df["deleted_files"] = membership<br class="calibre9"/>
+<br class="calibre9"/>
+In [24]: metadata_df.loc[metadata_df["deleted_files"] ==\<br class="calibre9"/>
+  True].median()<br class="calibre9"/>
+Out[24]:<br class="calibre9"/>
+churn_count        4.000<br class="calibre9"/>
+line_count        91.500<br class="calibre9"/>
+relative_churn     0.145<br class="calibre9"/>
+deleted_files      1.000<br class="calibre9"/>
+dtype: float64<br class="calibre9"/>
+<br class="calibre9"/>
+In [25]: metadata_df.loc[metadata_df["deleted_files"] ==\<br class="calibre9"/>
+  False].median()<br class="calibre9"/>
+Out[25]:<br class="calibre9"/>
+churn_count         9.0<br class="calibre9"/>
+line_count        149.0<br class="calibre9"/>
+relative_churn      0.1<br class="calibre9"/>
+deleted_files       0.0<br class="calibre9"/>
+dtype: float64</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_163"></span>In looking at the median values of the deleted files versus the files that are still in the repository, there are some differences, mainly in that the relative churn number is higher for the deleted files. Perhaps the files that were problems were deleted? It is unknown without more investigation. Next, a correlation heatmap is created in Seaborn on this DataFrame.</p>
+<p class="codelink"><a id="p163pro01" href="part0037_split_024.html#p163pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [26]: sns.heatmap(metadata_df.corr(), annot=True)</p>
+<p class="noindent">This can be seen in <a href="part0019.html#ch8fig4" class="calibre7">Figure 8.4</a>. It shows that there is a correlation, a very small positive one, between relative churn and deleted files. This signal might be included in an ML model to predict the likelihood of a file being deleted.</p>
+<div class="figure">
+<div class="image"><a id="ch8fig4" class="calibre7"></a><img src="../images/00046.jpeg" aria-describedby="alt_08fig04" alt="A screenshot of a Files-Deleted Correlation Heatmap is shown." class="calibre8"/>
+<aside class="hidden" id="alt_08fig04" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal and the vertical axes read: chum_count, line_count, relative_chum, and deleted_files, respectively. To the right, the heatmap scale of different shades is shown ranging from 0.0 to 1.0 (from bottom to top). The graph infers the following data: chum_count, chum_count, and 1; chum_count, line_count, and 0.36; chum_count, relative_chum, and 0.1; chum_count, deleted_files, and negative 0.065; line_count, chum_count, and 0.36; line_count, line_count, and 1; line_count, relative_chum, and negative 0.057; line_count, deleted_files, and negative 0.012; relative_chum, chum_count, and 0.1; relative_chum, line_count, and negative 0.057; relative_chum, relative_chum, and 1; relative_chum, deleted_files, and 0.049; deleted_files, chum_count, negative 0.065, deleted_files, line_count, and negative 0.012; deleted_files, relative_chum, and 0.049; and deleted_files, deleted_files, and 1.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 8.4</span> Files-Deleted Correlation Heatmap</p>
+</div>
+<p class="noindent">Next, one final scatterplot shows some differences between deleted files and files that have remained in the repository.</p>
+<p class="codelink"><a id="p164pro01" href="part0037_split_025.html#p164pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">In [27]: sns.lmplot(x="churn_count", y="line_count",<br class="calibre9"/>
+  hue="deleted_files", data=metadata_df)</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_164"></span><a href="part0019.html#ch8fig5" class="calibre7">Figure 8.5</a> shows three dimensions: line counts, churn counts, and the category of True/False for a deleted file.</p>
+<div class="figure">
+<div class="image"><a id="ch8fig5" class="calibre7"></a><img src="../images/00047.jpeg" aria-describedby="alt_08fig05" alt="A screenshot of a Scatterplot Line Counts and Churn Count is shown." class="calibre8"/>
+<aside class="hidden" id="alt_08fig05" data-AmznRemoved-M8="true" data-AmznRemoved="mobi7">
+<p class="calibre21">The horizontal axis represents churn_count ranging from 0 to 14000 in increments of 2000 and the vertical axis represents line_count ranging from 0 to 350000 in increments of 50000. The plots (True and False) are shown clustered and few scattered between the range 0 and 2000 along the horizontal axis and between 50000 and 75000. Two inclining lines are shown from a point lower than 0 on the vertical axis and end at 150000. The lines are shown intersecting at the point (0, 0), respectively. To the right, a legend represents deleted files where two different colors denote True or False.</p>
+</aside>
+</div>
+<p class="fig_caption"><span class="calibre6">Figure 8.5</span> Scatterplot Line Counts and Churn Count</p>
+</div>
+<h3 id="ch08lev10" class="calibre12">Deploying a Project to the Python Package Index</h3>
+<p class="noindentb">With all of the hard work performed in creating a library and command-line tool, it makes sense to share the project with other people by submitting it to the Python Package Index. There are only a few steps to do this.</p>
+<p class="number">1. Create an account on <a href="https://pypi.python.org/pypi" class="calibre7">https://pypi.python.org/pypi</a>.</p>
+<p class="number">2. Install twine: pip install twine.</p>
+<p class="number">3. Create a setup.py file.</p>
+<p class="numberb">4. Add a deploy step in the Makefile.</p>
+<p class="noindent">Starting at step 3, here is the output of the setup.py file. The two parts that are the most important are the packages section, which ensures the library is installed, and the scripts section. The scripts includes the dml script that was used throughout the article. You can see the entire script here: <a href="https://github.com/noahgift/devml/blob/master/setup.py" class="calibre7">https://github.com/noahgift/devml/blob/master/setup.py</a>.</p>
+<p class="codelink"><a id="p164pro02" href="part0037_split_026.html#p164pro02a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">import sys<br class="calibre9"/>
+if sys.version_info &lt; (3,6):<br class="calibre9"/>
+    sys.exit('Sorry, Python &lt; 3.6 is not supported')<br class="calibre9"/>
+import os<br class="calibre9"/>
+<br class="calibre9"/>
+from setuptools import setup<br class="calibre9"/>
+<br class="calibre9"/>
+from devml import __version__<br class="calibre9"/>
+<br class="calibre9"/>
+if os.path.exists('README.rst'):<br class="calibre9"/>
+    LONG = open('README.rst').read()<br class="calibre9"/>
+<br class="calibre9"/>
+setup(<br class="calibre9"/>
+    name='devml',<br class="calibre9"/>
+    version=__version__,<br class="calibre9"/>
+    url='https://github.com/noahgift/devml',<br class="calibre9"/>
+    license='MIT',<br class="calibre9"/>
+    author='Noah Gift',<br class="calibre9"/>
+    author_email='consulting@noahgift.com',<br class="calibre9"/>
+    description="""Machine Learning, Statistics<br class="calibre9"/>
+        and Utilities around Developer Productivity,<br class="calibre9"/>
+        Company Productivity and Project Productivity""",<br class="calibre9"/>
+    long_description=LONG,<br class="calibre9"/>
+    packages=['devml'],<br class="calibre9"/>
+    include_package_data=True,<br class="calibre9"/>
+    zip_safe=False,<br class="calibre9"/>
+    platforms='any',<br class="calibre9"/>
+    install_requires=[<br class="calibre9"/>
+        'pandas',<br class="calibre9"/>
+        'click',<br class="calibre9"/>
+        'PyGithub',<br class="calibre9"/>
+        'gitpython',<br class="calibre9"/>
+        'sensible',<br class="calibre9"/>
+        'scipy',<br class="calibre9"/>
+        'numpy',<br class="calibre9"/>
+    ],<br class="calibre9"/>
+    classifiers=[<br class="calibre9"/>
+        'Development Status :: 4 - Beta',<br class="calibre9"/>
+        'Intended Audience :: Developers',<br class="calibre9"/>
+        'License :: OSI Approved :: MIT License',<br class="calibre9"/>
+        'Programming Language :: Python',<br class="calibre9"/>
+        'Programming Language :: Python :: 3.6',<br class="calibre9"/>
+        'Topic :: Software Development \<br class="calibre9"/>
+        :: Libraries :: Python Modules'<br class="calibre9"/>
+    ],<br class="calibre9"/>
+    scripts=["dml"],<br class="calibre9"/>
+)</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_165"></span>The scripts directive will then install the dml tool into the path of all users who pip install the module.</p>
+<p class="noindent">The final section is to configure is the Makefile, and this is what it looks like.</p>
+<p class="codelink"><a id="p165pro01" href="part0037_split_028.html#p165pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">deploy-pypi:<br class="calibre9"/>
+    pandoc --from=markdown --to=rst README.md -o README.rst<br class="calibre9"/>
+    python setup.py check --restructuredtext --strict --metadata<br class="calibre9"/>
+    rm -rf dist<br class="calibre9"/>
+    python setup.py sdist<br class="calibre9"/>
+    twine upload dist/*<br class="calibre9"/>
+    rm -f README.rst</p>
+<p class="noindent"><span epub:type="pagebreak" id="page_166"></span>The entire contents of the Makefile can be found here in GitHub: <a href="https://github.com/noahgift/devml/blob/master/Makefile" class="calibre7">https://github.com/noahgift/devml/blob/master/Makefile</a>.</p>
+<p class="noindent">Finally, to deploy, the process looks like this.</p>
+<p class="codelink"><a id="p166pro01" href="part0037_split_029.html#p166pro01a" class="calibre7">Click here to view code image</a></p>
+<p class="pre">(.devml) →  devml git:(master) ✗ make deploy-pypi<br class="calibre9"/>
+pandoc --from=markdown --to=rst README.md -o README.rst<br class="calibre9"/>
+python setup.py check --restructuredtext --strict --metadata<br class="calibre9"/>
+running check<br class="calibre9"/>
+rm -rf dist<br class="calibre9"/>
+python setup.py sdist<br class="calibre9"/>
+running sdist<br class="calibre9"/>
+running egg_info<br class="calibre9"/>
+writing devml.egg-info/PKG-INFO<br class="calibre9"/>
+writing dependency_links to devml.egg-info/dependency_links.txt<br class="calibre9"/>
+....<br class="calibre9"/>
+running check<br class="calibre9"/>
+creating devml-0.5.1<br class="calibre9"/>
+creating devml-0.5.1/devml<br class="calibre9"/>
+creating devml-0.5.1/devml.egg-info<br class="calibre9"/>
+copying files to devml-0.5.1...<br class="calibre9"/>
+....<br class="calibre9"/>
+Writing devml-0.5.1/setup.cfg<br class="calibre9"/>
+creating dist<br class="calibre9"/>
+Creating tar archive<br class="calibre9"/>
+removing 'devml-0.5.1' (and everything under it)<br class="calibre9"/>
+twine upload dist/*<br class="calibre9"/>
+Uploading distributions to https://upload.pypi.org/legacy/<br class="calibre9"/>
+Enter your username:</p>
+<h3 id="ch08lev11" class="calibre12">Summary</h3>
+<p class="noindent">A basic data science skeleton was created and the parts were explained in the first part of this chapter. In the second half, a deep dive on exploring the CPython GitHub project was performed in Jupyter Notebook. Finally, the data science command-line tool project, DEVML, was packed up to be deployed to the Python Package Index. This chapter should be a good building block to study for other data science developers who want to build solutions that can be delivered as a Python library and a command-line tool.</p>
+<p class="noindent">Just like other chapters in this book, this is just the start of what could be a company or AI application inside a company. Using techniques exposed in other chapters of this book, APIs written in Flask or chalice and data pipelines could be created to ship this into production.</p>
+</body></html>
