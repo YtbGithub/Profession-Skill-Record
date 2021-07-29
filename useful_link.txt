@@ -1,0 +1,2 @@
+https://gitee.com/ have same feature with git, it's powerful
+https://github.com/rougier/numpy-100 python-numpy-100 in github
