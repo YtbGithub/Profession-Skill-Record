@@ -1,0 +1,176 @@
+1.download & install
+	# pip install django
+	# pip --default-timeout=100 install django -i https://pypi.tuna.tsinghua.edu.cn/simple, 指定清华源
+	# pip --default-timeout=100 install django -i https://pypi.douban.com/simple, 指定豆瓣源
+2.start project
+	# django-admin startproject project_name
+	
+3.start app
+	3.1 order
+		# python manage.py startapp app_name
+	3.2 setup settings.py
+		# from django.apps import AppConfig
+		# class CommonappsConfig(AppConfig):
+		#	 default_auto_field = 'django.db.models.BigAutoField'
+		#  	 name = 'commonapps'
+		write commonapps to setting.INSTALLED_APPS
+	3.3 urls setting
+		# from django.urls import include
+		# urlpatterns = [path('', include('app_name.urls'))]
+	3.4 setting.MIDDLEWARE
+		# 'django.middleware.csrf.CsrfViewMiddleware', 禁掉
+4.runing project 
+	# python manage.py runserver [host:prot]
+
+5.database setup
+	1)change DATABASES -> default, pick one from 'django.db.backends.sqlite3', 'django.db.backends.postgresql', 'django.db.backends.mysql', or 'django.db.backends.oracle'
+		1>if use not sqlite3, have to setup user,password,host
+		2>INSTALLED_APPS = [
+			'django.contrib.admin', 		管理站点
+			'django.contrib.auth',			认证系统
+			'django.contrib.contenttypes',	内容类型框架
+			'django.contrib.sessions',		会话框架
+			'django.contrib.messages',		消息传递框架
+			'django.contrib.staticfiles',	管理静态文件的框架
+		]]
+	2)database migrate:
+		1>design model in models.py
+			# from django.db import models
+			# class Name(mudels.Model), like this to sql table of model.
+		2>setup INSTALLED_APPS, such as 'myApp.app.appConfig', that means is variable appConfig under side myApp>app.py
+		3>python manage.py makemigrations myApp => migrate models
+		4>python manage.py migrate => generate sql tables
+		
+		⭐__str__ function is consequence(important), to user to show
+		⭐迁移时提示No Changed Detected，可能是由于models/__init__.py中没有把所有的模型导入，也可能是删除除了__init__.py的文件就可以迁移了
+		example:	
+			models/__init__.py
+				from .userinfo import *
+				from .jiancedian import *
+				from .shebei import *
+				from .baojing import *
+				from .biandianzhan import *
+				from .paishuibengkaiguan import *
+				from .shuiweishuju import *
+			然后执行迁移的两个命令
+	
+	3)Python Shell
+		1>python manage.py shell
+
+6.introducing the Django admin, 管理站点
+	maybe is failed, according to the prompt
+	1)python manage.py createsuperuser
+		input:user_name, user_password, user_email
+	2)python manage.py runserver
+		goto http://host:prot/admin/
+
+7.django的类视图
+	1)定义
+		class DictView:
+			def get(request):
+				return JsonResponse()
+			def post(request):
+				return JsonResponse()
+	2)使用
+		url(r'^/$', DictView.as_view())
+		as_view(),根据用户的请求去查询自定义函数(http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace'])
+			如果没有报错，如果有返回同名函数的响应
+			
+8.django的ORM
+	ManyToManyField:自动生成一个表来管理多对多关系，理念，如果我是你的朋友，那么你就是我的朋友，默认情况下，中间表的表名是使用多对多字段的名称和包含它的模型的表名生成的
+		parameter:
+			ManyToManyField.symmetrical, 可以指定多对多的关系是非对称的(默认对称)
+			ManyToManyField.through, 可以指定这个中间表(自建表)
+			ManyToManyField.through_fields, 可以指定这个中间表那些字段自动生成多对多关系
+			ManyToManyField.db_table, 指定存储多对多数据的表的名称，没有则自动创建
+			ManyToManyField.db_constraint, 控制是否应该在数据库中为中间表的外键创建约束，默认True，改为False对数据完整性不好
+			ManyToManyField.swappable, 控制迁移，具体不明
+			
+		use:
+			ManyToManyField(SqlTableModel, through='', through_fields=('','')),只有使用了through, 才可以使用through_fields
+	创建并且关联：new_publication = a2.publications.create(title='Highlights for Children')
+	正向访问m2m:obj.m2m.all()
+	反向访问m2m:obj.m2m_set.all()
+	
+	annotate
+		RizhiModel.objects.values('audit_working').annotate(sum=Sum("audit_working"))
+			.filter(rizhi_project_id=project.id, is_delete=0) => return <query[{"audit_working":..., "sum":...}]>
+	
+	
+Tips:
+	1.JsonResponse：return JsonResponse(json.dumps(data), safe=False), if data is type of dict, must be parameter safe to False
+	2.给类视图传递参数
+		2.1 正则
+			([a-z\d\-]+):(...)将匹配的部分作为参数传入, 如果没有变量可以用args来接收
+			(?P<id>[a-z\d\-]+):(...)将匹配的部分作为kwargs传入, 格式为{'id':...}, 其中...为匹配到的部分
+	3.url路由
+		3.1如果使用正则匹配，则谁先匹配就走谁的视图函数，		如路由/url/(\d+)，/url/1 访问/url/1，走路由/url/(\d+)
+		3.2如果使用路由匹配，则找最长匹配的路由走其视图函数，	如路由/url/123，/url/12 访问/url/123，走路由/url/123
+	
+	4.多对多使用心得
+		model:
+			构造返回值：self.m2m_field.all()可以拿到所有跟当前对象关联的m2m对象, 可以调用m2m对象的返回值函数
+			构造模型:m2m_field = models.ManyToManyField('指定与谁相关联',related_name='自定义辨识名',through='指定存放关系的表')
+		view:
+			设置关系：sql_obj.m2m_field.set(*[a,b,c]), 可以是字符,指定关联的表里要存在
+			添加关系：sql_obj.m2m_field.add(obj1, obj2, ...)
+			置空关系: sql_obj.m2m_field.clear()
+	
+	5.操作查询的对象(Object)
+		5.1：obj = selfModel.objects.filter(); obj = [i for i in obj]; obj.id = .., obj.column = ..., ... 
+			保存：obj.save()
+			删除：obj.delete()
+	
+	6.ORA-00942: table or view does not exist
+		使用oracle + django报错，原因是因为模型类没转成表，即存在属于模型类的表没有转化成数据库里面的表，即便注释也不行
+	
+	7.django 的 orm 即使实例的字段名字是错误的，有时也不提示，如feiyong.audit_date写成feiyong.audit_data进行赋值也不会报错，就是入不了库
+	
+	8.models.SqlModel.objects.bulk_create(), 批量插入数据, 列表包含instance, [obj1,obj2,..], obj1=models.SqlModel(column1='', ...)
+	
+	9.pycharm小技巧
+		file->settings -> editor -> live templates -> python -> '+' -> live templates
+			 -> setting abbreviation(快捷键),description(描述),template text(模板内容), Define(选择python)
+			 -> apply
+			 -> ok
+		设置一个快捷键，可以输出一个自定义内容
+		
+	10.django ORM的大发现：动态构建查询参数
+		filter(**kwargs), 使用字典来构建键值对, 并传入查询中来进行高级搜索
+			kwargs['key'] = value, 其中key条件比较多, 比如,
+			操作外键时 : kwargs["column_id"] = "..."
+			操作外键的其他字段时 : kwargs["column__name"] = "..."
+			操作外键时增加其他属性(如, 包含、大于、大于等于、...) : kwargs["column__name__contains"] = "..."
+			主要操作点：单下划线'_',双下划线'__', 且主键是没有办法使用包含(__contains)属性的, 比较运算符是可以使用的
+	11.django 执行原生代码
+		from django.db import connection
+		with connection.cursor() as cursor:
+			cursor.execute('...');
+			example of the official:cursor.execute("UPDATE bar SET foo = 1 WHERE baz = %s", [self.baz]),防止sql注入攻击
+			result = cursor.fetchall()/fetchone()
+	12.ORM order_by
+		~~~)
+		Test.objects.all().order_by('id')	升序	从小到大
+		Test.objects.all().order_by('-id')	降序	从大到小
+		Test.objects.all().order_by('age', 'date')	多个字段先判断年龄，再判断时间
+		~~~)
+		__gt 	大于
+		__gte 	大于等于
+		__lt 	小于
+		__lte 	小于等于
+	13.正/反向查询
+		主表 Publisher 从表 Book
+		正向 object = Book.objects.filter(publisher__name='出版社1'), object.info.hige or object.info.age or object.info.width
+		反向 object = Publisher.objects.filter(id=...), object.book_set.all() OR object.book.all()	
+	14.Models里面的时间格式问题
+		"time":self.sj_data.strftime("%H时%M分") => 会因为编码问题而报错
+		solution: "time":self.sj_data.strftime("%H{H}%M{M}").format(H="时", M="分")
+	15.django的debug
+		在manage.py中右键debug， 然后去edit configurations， 
+		配置一下parameters: runserver 0.0.0.0:8000
+		配置一下environment variables: DJANGO_SETTINGS_MODULE app_name.settings
+		配置一下virtual environment
+		apply => ok
+			
+		
+			

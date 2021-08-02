@@ -1,1 +1,0 @@
-完整的阐述的前后端传递文件的方法：https://www.cnblogs.com/xiao987334176/p/14361942.html

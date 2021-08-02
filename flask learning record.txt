@@ -1,0 +1,10 @@
+CORS(跨域问题):
+	A -> B请求文件, A的request 以及 B的response都可能会出现问题
+		@app.after_request
+		def cors(environ):
+			environ.headers['Access-Control-Allow-Origin'] = '*'
+			environ.headers['Access-Control-Allow-Method'] = '*'
+			environ.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
+			return environ
+		解决方案：使用flask的after_request装饰器来给添加响应前的配置
+		

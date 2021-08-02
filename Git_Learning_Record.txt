@@ -22,7 +22,7 @@ git command:
 
 git operation:
 	git init
-	git add file_name
+	git add file_name 添加单个文件| git add . 添加新文件和编辑过的文件，不包括删除的文件| git add -A 添加所有改变的文件| git add -u 添加编辑或删除的文件，不包括新添加的文件
 	git commit -m "describe"
 	git push -u alias master
 

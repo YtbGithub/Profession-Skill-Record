@@ -1,0 +1,40 @@
+package
+	1.crawl
+		1.1 requests
+		1.2 scrpy
+		1.3 web driver
+	2.parse
+		2.1 beautifulSoup
+		2.2 re
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+1.1 requests
+	request: r = requests.GET('...')
+		GET: requests.get(url:str, headers:dict, params:dict) params:transmit parameters in get request.
+		POST: requests.post(url:str, headers:dict, data:dict)
+		and more PUT,DELETE,HEAD,OPTIONS those like it
+	response: 
+		text: r.text
+		bytes(binary): r.content
+		Image: from PIL improt Image,from io import bytesIO => Image.open(bytesIO(r.content))
+		Json: r.json(), maybe need check current response status code. OR current response status code needed check
+		raw response data: r.raw(), return an object, has function of read
+	headers:
+		headers_dict = {"key1":value1, "key2":value2}
+		headers_tuple = (("key1", value1), ("key1", value2)) multiple values corresponding same key
+		use, requests.post(url, data=json.dumps(headers_dict)), headers_dict was regarded as String Type transfer to service, be regarded as ...,被当作...
+		use, requests.post(url, json=headers_dict), '''headers_dict was automatic coding'''
+
+
+		
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+1.2 scrpy
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+1.3 web driver
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+2.1 beautifulSoup
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+2.2 re
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
