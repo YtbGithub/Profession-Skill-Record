@@ -9,7 +9,10 @@ git config:
 	git config --global user.email "..."
 	git config --global user.name "..."
 	git remote add [appoint repository alias] [appoint repository url/git]
-	
+	warning: 使用https的地址提交时总让登录， 切换为ssh的地址就会好了。
+	1. git remote set-url alias [new_url], 更换指定仓库的地址	
+	2. git remote rm allas; git remote add alias [new_url] 
+
 git updates from a remote repository:
 	git fetch: git fetch alias, git merge alias/branch
 	git merge: git merge alias/branch
