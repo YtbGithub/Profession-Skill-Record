@@ -19,6 +19,7 @@ git command:
 	add repository: git remote add [alias] [url]
 	del repository: git remote rm [alias]
 	push to repository: git push [alias] [branch]
+	pull to location: git pull [alias] [branch]
 
 git operation:
 	git init
