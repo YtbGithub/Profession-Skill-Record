@@ -1,0 +1,27 @@
+Centos
+	# Linux sudo命令以系统管理者的身份执行指令，也就是说，经由 sudo 所执行的指令就好像是 root 亲自执行
+	1.sudo yum update -y
+	2.sudo yum install -y git
+	3.git clone git://github.com/yyuu/pyenv.git   ~/.pyenv
+	4.git clone git://github.com/yyuu/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv
+	5.vim ~/.bashrc, 添加以下四行到文件最后
+		export PYENV_ROOT="$HOME/.pyenv"
+		export PATH="$PYENV_ROOT/bin:$PATH"
+		eval "$(pyenv init -)"
+		eval "$(pyenv virtualenv-init -)"
+		source  ~/.bashrc 
+	
+	6.安装系统必要的环境
+		sudo yum groupinstall "Development Tools"  -y
+		sudo yum install -y python-devel libevent-devel python-pip gcc xz-devel openssl-devel readline-devel sqlite-devel bzip2-devel
+		sudo yum install libffi-devel -y     #安装python3.7以上版本需要额外 添加此行
+	7.查询当前可以安装的版本
+		pyenv install -l
+		pyenv install x.x.x
+	8.pyenv options
+		创建指定版本的虚拟环境名为alias：pyenv virtualenv x.x.x alias
+		查看python虚拟环境：pyenv virtualenvs
+		指定当前目录的虚拟环境：pyenv local alias
+
+Windows server
+	
