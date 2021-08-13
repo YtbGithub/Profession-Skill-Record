@@ -23,5 +23,11 @@ Centos
 		查看python虚拟环境：pyenv virtualenvs
 		指定当前目录的虚拟环境：pyenv local alias
 
-Windows server
+python 中的包也可以用
+	pip install virtualenv
+	pip install virtualenvwarpper
+	新建虚拟环境：virtualenv envname；virtualenv -p python2 envname  # 如果安装了多个python版本，如py2和py3，需要指定使用哪个创建虚拟环境
+	启动虚拟环境：cd envname; cd Scripts; activate
+	关闭虚拟环境：cd envname; cd Scripts; deactivate
+	
 	
