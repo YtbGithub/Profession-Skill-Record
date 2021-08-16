@@ -1,0 +1,10 @@
+from distutils.core import setup
+from getAllfiles import getAllSub2, 递归获取指定目录下的所有文件
+setup(
+    name='hotel_web',
+    version='1.0',
+    description='hotel_web project',
+    packages=['blueprints', 'models'], # 只识别python包
+    py_modules=['app'], # 识别python文件
+    data_files=['r.txt'] + getAllSub2('static') + getAllSub2('templates') # 识别所有的数据文件
+)
