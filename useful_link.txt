@@ -1,3 +1,6 @@
-https://gitee.com/ have same feature with git, it's powerful
-https://github.com/rougier/numpy-100 python-numpy-100 in github
-https://www.macxin.com/
+gitee：https://gitee.com/
+numpy练习题：https://github.com/rougier/numpy-100
+Mac下载软件：https://www.macxin.com/
+中国知网：https://www.cnki.net/
+理杏仁：https://www.lixinger.com/
+99藏书网：https://www.99csw.com/

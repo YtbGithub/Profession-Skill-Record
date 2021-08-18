@@ -33,6 +33,20 @@ package
 	scrapy crawl spider_name
 
 	如何用脚本方式启动scrapy：https://www.cnblogs.com/lawlietfans/p/7475742.html
+	
+	流程：
+	1. spider 穿过 [spider middleware] 发送 request 到 engine(引擎)
+	2. engine 转发 request 给 scheduler(调度器)
+	3. scheduler 转发 request 给 engine
+	4. engine 穿过 [download middleware] 转发 request 给 downloader
+	5. downloader 下载之后,穿过 [download middleware] 发送 response 给 engine
+	6. engine 拿到 response 发送给 spider
+	7. spider 处理完之后 发送 request/item 给engine
+	8. engine 如果接收到的是 request 则会调度给 scheduler
+	   engine 如果接收到的是 items 则会调度给 piplines 进行持久化
+	关于中间件：
+		spider middleware：返回值不同引擎也会有不同的转发方向
+			比如：
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
 1.3 web driver
 ----------------------------------------------------------------------------------------------------------------------------------------------------------

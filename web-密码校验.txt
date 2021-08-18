@@ -5,9 +5,11 @@ pip install bcrypt
 验证密码：  bcrypt.checkpw(password, salt_pw), password、salt_pw必须是bytes类型的, 从数据库拿到salt_pw可以用encode()来进行编码
 
 import bcrypt
-pword = bcrypt.hashpw(pw, bcrypt.gensalt()) => 返回值：b'$2b$12$E0o3have0KSkbGpjtGIdBeV4PRuxK.FhPjf8INi2TXFc.OF1MXgC.'
+pword = bcrypt.hashpw(pw.encode(), bcrypt.gensalt()) => 返回值：b'$2b$12$E0o3have0KSkbGpjtGIdBeV4PRuxK.FhPjf8INi2TXFc.OF1MXgC.'
 	pword.decode(), 可以用来存储数据库
 bcrypt.checkpw(pw.encode(), pword.encode()), 从数据库拿出来进行编码然后验证,同样地,前端传来的密码也要进行编码
+上述操作最需要注意的是bcrypt都是用bytes类型来操作
+
 
 str -> bytes: str.encode()
 bytes -> str: bytes.decode()
