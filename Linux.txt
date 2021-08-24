@@ -3,9 +3,38 @@
 	shutdown -r now
 查看进程：
 	ps -ef
-复制文件
+复制文件：
 	cp -r current_path new_path, -r (pick all of subordinate folder and file)
-ipconfig:/etc/sysconfig/network-scripts/ifcfg-name(random name)
+配置网络：
+	ipconfig:vi /etc/sysconfig/network-scripts/ifcfg-name(random name)
+	TYPE=Ethernet,			#TYPE：接口类型；常见有的Ethernet, Bridge
+	BOOTPROTO=none     		# 等号后面写：dhcp 表示动态获取IP地址，  static 表示静态IP，none表示不指定，就是静态。
+	DEFROUTE=yes
+	IPV4_FAILURE_FATAL=no,	#IPV4_FAILURE_FATAL 如果为yes，则ipv4配置失败禁用设备
+	IPV6INIT=yes
+	IPV6_AUTOCONF=yes
+	IPV6_DEFROUTE=yes
+	IPV6_FAILURE_FATAL=no
+	NAME=ens33   			#网卡名
+	UUID=50eff37c-72b4-407a-a3ee-9ef8ca746b95,	#UUID：设备的惟一标识
+	DEVICE=ens33,			#DEVICE：此配置文件应用到的设备
+	ONBOOT=yes,				#ONBOOT：在系统引导时是否激活此设备
+	DNS1=8.8.8.8,			#DNS1：第一个DNS服务器指向
+	DNS2=192.168.1.1,		#DNS2：第二个DNS服务器指向
+	NETMASK=255.255.255.0,	#NETMASK：子网掩码
+	IPADDR=192.168.1.222,	#IPADDR：指明IP地址
+	PREFIX=24
+	GATEWAY=192.168.1.1,	#GATEWAY: 默认网关
+	IPV6_PEERDNS=yes
+	IPV6_PEERROUTES=yes
+	IPV6_PRIVACY=no
+
+	#配置文件参数说明：
+	#HWADDR：对应的设备的MAC地址
+	#BOOTPROTO：激活此设备时使用的地址配置协议，常用的dhcp, static, none,bootp
+	#NM_CONTROLLED： NM是NetworkManager的简写，此网卡是否接受NM控制；建议CentOS6为“no”
+	#USERCTL：普通用户是否可控制此设备
+
 
 mkdir: make directory
 touch: make file

@@ -18,8 +18,10 @@ Centos
 	7.查询当前可以安装的版本
 		pyenv install -l
 		pyenv install x.x.x
-			v=3.6.2|wget http://mirrors.sohu.com/python/$v/Python-$v.tar.xz -P ~/.pyenv/cache/;pyenv install $v 
+			1. v=3.6.2|wget http://mirrors.sohu.com/python/$v/Python-$v.tar.xz -P ~/.pyenv/cache/;pyenv install $v 
 			# 用国内源安装很快
+			2. 将python安装包放入pyenv/install_cache, 然后运行pyenv install x.x.x
+			3. 替换掉pyenv-install.vbs文件中的mirror, mirror为镜像源
 	8.pyenv options
 		创建指定版本的虚拟环境名为alias：pyenv virtualenv x.x.x alias
 		查看python虚拟环境：pyenv virtualenvs
