@@ -111,3 +111,6 @@
 		修改数据库的时区：alter database set time_zone='+08:00';
 		修改当前会话的时区：alter session set time_zone='+08:00';
 		重启数据库：SQL> shutdown immediate; SQL> startup
+	8.having
+		where 不能对聚合的结果进行筛选
+		having 可以对聚合过的结果进行筛选, SELECT ID, SUM(NUM) AS i FROM A HAVING i>200;

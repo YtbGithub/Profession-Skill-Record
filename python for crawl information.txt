@@ -48,6 +48,18 @@ package
 		spider middleware：返回值不同引擎也会有不同的转发方向
 			比如：返回request 则会调度给 下载器
 			比如：返回response 则会调度给 调度器 而调度器则会调度给 spider.parse
+			
+		自定义中间件：
+			custom_settings = {
+				'DOWNLOADER_MIDDLEWARES': {
+					# 禁用默认的useragent插件
+					'scrapy.downloadermiddleware.useragent.UserAgentMiddleware': None,
+					# 启用自定义的中间件
+					'ScrapyDemo.middlewares.CustomUserAgentMiddleWare': 400
+				}
+			}
+		代理：
+			在Downloader middlewares中的process_request函数里面设置：request.meta["proxy"] = 'http://ip:port'
 	关于setting：
 		开启下载器中间件：DOWNLOADER_MIDDLEWARES 取消注释
 		开启爬虫中间件：SPIDER_MIDDLEWARES 取消注释
