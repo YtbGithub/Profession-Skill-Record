@@ -1,0 +1,16 @@
+关于系统
+	1.添加某程序到系统服务中去
+		目的：方便启停、统一管理
+		原因：由于程序的制造者不同，又为了区分或方便人们识别以及使用，服务的开启与关闭命令都很长
+			例如redis启动：
+				redis-server.exe redis.windows.conf
+			添加redis到windows服务中：
+				redis-server --service-install redis.windows.conf
+			启动命令成了：
+				redis-server --service-start
+			终止命令成了：
+				redis-server --service-stop
+			至此形成了相对来说统一化的管理方式，更方便自己来操作自己所下载的程序
+			如：redis-server --service-start、mysql-server --service-start
+			注：此上为说明思路，操作系统为windows 10.
+		解释：是将程序创建一个更方便的名字来进行启停，类似在windows中的服务，点击就可以开始 or 停止

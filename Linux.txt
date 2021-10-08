@@ -47,4 +47,8 @@ chmod: change mode 更改权限
     chmod [-cfvR] [--help] [--version] mode file
 
 chattr: 适用于日志文件，如chattr +i *.conf,该文件的属性会是----i--------,只能追加而不能删除
+
+chkconfig：用户添加服务
+
+source：刷新环境变量
 	
