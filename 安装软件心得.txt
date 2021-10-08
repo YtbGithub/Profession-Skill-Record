@@ -4,9 +4,9 @@
 	|
 	|解压: tar xzf redis-6.0.8.tar.gz
 	|
-	|初始化: cd redis-6.0.8 && make(如果报错将make更换为make MALLOC=libc，此步为指定内存方式)
+	|初始化: cd redis-6.0.8 && make(如果报错将make更换为make MALLOC=libc,此步为指定内存方式)
 	|
-	|文件解释:src/redis-server为redis服务， src/redis-cli为redis客户端，redis.conf为配置文件
+	|文件解释:src/redis-server为redis服务, src/redis-cli为redis客户端,redis.conf为配置文件
 	|
 	|配置文件关键字解释:
 	|	daemonize no 更改是否为后台启动
@@ -16,11 +16,11 @@
 	|
 	|将redis配置为服务并启动:
 	|	cd /etc/init.d/
-	|	touch redis(服务名，也是文件名)
+	|	touch redis(服务名,也是文件名)
 	|	vi redis(内容是运行redis的脚本):
 	|		
 	|		#!/bin/sh
-	|		# chkconfig:   234 90 10
+	|		# chkconfig:   2345 90 10 #redis服务必须在运行级2,3,4,5下被启动或关闭,启动的优先级是90,关闭的优先级是10,解决了error:service redis does not support chkconfig
 	|		# Simple Redis init.d script conceived to work on Linux systems
 	|		 
 	|		REDISPORT=6379 #指定端口
@@ -29,47 +29,47 @@
 	|		 
 	|		CLIEXEC=/root/redis-6.2.6/src/redis-cli # 上述客户端的位置
 	|
-	|		PIDFILE=/var/run/redis_6379.pid # 查看配置文件，与配置文件对应的守护进程pid号
+	|		PIDFILE=/var/run/redis_6379.pid # 查看配置文件,与配置文件对应的守护进程pid号
 	|		 
 	|		CONF="/root/redis-6.2.6/redis.conf" # 配置文件地址
 	|		# 脚本开始
 	|		case "$1" in
-	|				start)
-	|						if [ -f $PIDFILE ]
-	|						then
-	|								echo "$PIDFILE exists, process is already running or crashed."
-	|						else
-	|								echo "Starting Redis server..."
-	|								$EXEC $CONF
-	|						fi
-	|						if [ "$?"="0" ]
-	|						then
-	|								echo "Redis is running..."
-	|						fi
-	|						;;
-	|				stop)
-	|						if [ ! -f $PIDFILE ]
-	|						then
-	|								echo "$PIDFILE exists, process is not running."
-	|						else
-	|								PID=$(cat $PIDFILE)
-	|								echo "Stopping..."
-	|								$REDIS_CLI -p $REDISPORT SHUTDOWN
-	|								while [ -x $PIDFILE ]
-	|								do
-	|										echo "Waiting for Redis to shutdown..."
-	|										sleep 1
-	|								done
-	|								echo "Redis stopped"
-	|						fi
-	|						;;
-	|				restart|force-reload)
-	|						${0} stop
-	|						${0} start
-	|						;;
-	|				*)
-	|						echo "Usage: /etc/init.d/redis {start|stop|restart|force-reload}" >&2
-	|						exit 1
+	|			start)
+	|				if [ -f $PIDFILE ]
+	|				then
+	|						echo "$PIDFILE exists, process is already running or crashed."
+	|				else
+	|						echo "Starting Redis server..."
+	|						$EXEC $CONF
+	|				fi
+	|				if [ "$?"="0" ]
+	|				then
+	|					echo "Redis is running..."
+	|				fi
+	|				;;
+	|			stop)
+	|				if [ ! -f $PIDFILE ]
+	|				then
+	|					echo "$PIDFILE exists, process is not running."
+	|				else
+	|					PID=$(cat $PIDFILE)
+	|					echo "Stopping..."
+	|					$REDIS_CLI -p $REDISPORT SHUTDOWN
+	|					while [ -x $PIDFILE ]
+	|					do
+	|						echo "Waiting for Redis to shutdown..."
+	|						sleep 1
+	|					done
+	|					echo "Redis stopped"
+	|				fi
+	|				;;
+	|			restart|force-reload)
+	|				${0} stop
+	|				${0} start
+	|				;;
+	|			*)
+	|				echo "Usage: /etc/init.d/redis {start|stop|restart|force-reload}" >&2
+	|				exit 1
 	|		esac
 	|		# 脚本结束
 	|	chmod 755 /etc/init.d/redis

@@ -51,4 +51,9 @@ chattr: 适用于日志文件，如chattr +i *.conf,该文件的属性会是----
 chkconfig：用户添加服务
 
 source：刷新环境变量
+
+vi快捷键:
+	dd：删除当前行
+	gg: 移动至首行
+	dG: 清空文件内容
 	
