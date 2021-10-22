@@ -23,6 +23,8 @@ git command:
 	del repository: git remote rm [alias]
 	push to repository: git push [alias] [branch]
 	pull to location: git pull [alias] [branch]
+	reset anyone note：git reset [--soft | --mixed | --hard] [HEAD]
+		
 
 git operation:
 	git init
