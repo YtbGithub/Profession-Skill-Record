@@ -10,3 +10,5 @@ iLovePDF(编辑PDF): https://www.ilovepdf.com/zh-cn?ref=wechatidtoolsforyou
 浑水摸鱼(研报)：https://www.muddywatersresearch.com/research/
 东方财经网(研报)：http://data.eastmoney.com/report/
 萝卜投研(研报)：https://robo.datayes.com/
+
+[电子图书-Free]zlibrary：https://zh.sa1lib.org/
