@@ -121,6 +121,7 @@ ORACLE 部分
 MYSQL 部分
 	1.排序多个字段
 		需要对多个字段分别定义，如果不定义呢就会采用默认升序的方式来排序
+		需要对多个字段分别定义，如果不定义呢就会采用默认升序的方式来排序
 		FOR EXAMPLE:
 			a,b 两个字段
 			ORDER BY a DESC, b ASC; 则为a降序，b升序
@@ -131,3 +132,12 @@ MYSQL 部分
 		查询构建虚拟列：SELECT ID,(SELECT COUNT(*) FROM Y) AS 虚拟列名 FROM X WHERE ...
 		函数构建虚拟列：SELECT ID,CASE WHEN 条件 THEN '返回值' END AS 虚拟列名
 		注意：构建虚拟列时请不要在最后一个查询字段后面加';'
+	4.字典入库，字典更新数据库
+		思想：k,v对可以对数据库的模型表进行匹配
+		第一步拿到表的字段并去重：valid_columns = set(表模型类.__table__.columns.keys())
+		第二步对字典进行遍历并拿到符合该表的字段键值对：valid_attrs = {k: y(v) for k, v in data.items() if k in valid_columns}
+		第三步入库：
+			三 1插入：db_session.add(表模型类(**valid_attrs))
+			三 2更新：db_session.query(表模型类).filter(表模型类.id == data_id).update(valid_attrs)
+
+
